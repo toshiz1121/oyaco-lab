@@ -16,7 +16,7 @@ Next.js App Router をベースに構築され、Google Gemini API を活用し�
 ### AI / Backend Services
 - **LLM**: Google Gemini Pro (`gemini-3-pro-preview`) - テキスト生成、対話制御
 - **Image Generation**: Google Gemini Pro Vision / Imagen (`gemini-3-pro-image-preview`) - 解説イラスト生成
-- **Speech**: Web Speech API (Browser Native) & Server-side TTS (OpenAI compatible API)
+- **Speech**: Web Speech API (Browser Native) - *現状はブラウザ標準機能を使用。品質向上のためServer-side TTS (OpenAI compatible API等) の導入を検討中*
 
 ### State Management & Storage
 - **Local State**: React Hooks (`useState`, `useReducer`)
