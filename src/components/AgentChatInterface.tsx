@@ -238,6 +238,9 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
+                // IME入力中（変換中）は送信しない
+                if (e.nativeEvent.isComposing) return;
+
                 if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleSendMessage();
