@@ -85,6 +85,35 @@ function saveSessions(sessions: ChatSession[]): void {
     const trimmedSessions = sessions.slice(0, MAX_SESSIONS);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmedSessions));
   } catch (error) {
+    // QuotaExceededError handling
+    if (error instanceof Error && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+        console.warn('Storage quota exceeded. Attempting to recover...');
+        
+        try {
+            // 戦略1: セッション数を減らして再試行 (最新5件のみ)
+            const reducedSessions = sessions.slice(0, 5);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(reducedSessions));
+            console.log('History saved with reduced session count.');
+            return;
+        } catch (retryError) {
+            // 戦略2: 画像データを削除して保存 (テキストのみ保存)
+            try {
+                const noImageSessions = sessions.slice(0, 10).map(s => ({
+                    ...s,
+                    messages: s.messages.map(m => {
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        const { imageUrl, ...rest } = m;
+                        return rest;
+                    })
+                }));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(noImageSessions));
+                console.log('History saved without images due to size limits.');
+                return;
+            } catch (finalError) {
+                console.error('Critical: Failed to save history even after compression.', finalError);
+            }
+        }
+    }
     console.error('Failed to save chat history:', error);
   }
 }

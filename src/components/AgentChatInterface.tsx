@@ -108,8 +108,8 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
         if (sessionWithAgentMsg) {
             setMessages(sessionWithAgentMsg.messages);
             
-            // 自動読み上げ（オプション）
-            // if (result.data.text) handleSpeak(result.data.text);
+            // 自動読み上げ
+            if (result.data.text) handleSpeak(result.data.text);
         }
 
       } else {

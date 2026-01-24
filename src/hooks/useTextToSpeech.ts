@@ -1,84 +1,58 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { generateSpeechAction } from '@/app/actions';
-import { toast } from 'sonner';
+import { useState, useCallback, useEffect } from 'react';
 
 interface TextToSpeechHook {
-  speak: (text: string) => Promise<void>;
+  speak: (text: string) => void;
   stop: () => void;
   isSpeaking: boolean;
   isSupported: boolean;
-  isLoading: boolean;
 }
 
 export function useTextToSpeech(): TextToSpeechHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSupported, setIsSupported] = useState(true); // Server Actionを使うので常にtrue
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isSupported, setIsSupported] = useState(false);
 
   useEffect(() => {
-    // クリーンアップ
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      setIsSupported(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    // コンポーネントのアンマウント時にキャンセル
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
       }
     };
   }, []);
 
-  const speak = useCallback(async (text: string) => {
-    try {
-      // 既存の再生を停止
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+  const speak = useCallback((text: string) => {
+    if (!('speechSynthesis' in window)) return;
 
-      setIsLoading(true);
-      setIsSpeaking(true); // ロード中もスピーキング状態として扱う
+    // 既存の再生を停止
+    window.speechSynthesis.cancel();
 
-      // Server Actionを呼び出して音声データを取得
-      const audioDataUrl = await generateSpeechAction(text);
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ja-JP'; // 日本語設定
+    utterance.rate = 1.0; // 速度
+    utterance.pitch = 1.0; // 高さ
 
-      if (!audioDataUrl) {
-        throw new Error("音声データの生成に失敗しました");
-      }
-
-      const audio = new Audio(audioDataUrl);
-      audioRef.current = audio;
-
-      audio.onended = () => {
-        setIsSpeaking(false);
-        setIsLoading(false);
-      };
-
-      audio.onerror = (e) => {
-        console.error("Audio playback error:", e);
-        setIsSpeaking(false);
-        setIsLoading(false);
-        toast.error("音声の再生に失敗しました");
-      };
-
-      // 再生開始（ユーザーインタラクション内であれば自動再生可能）
-      await audio.play();
-      setIsLoading(false); // 再生開始したらロード終了
-
-    } catch (error) {
-      console.error("TTS Error:", error);
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = (e) => {
+      console.error("TTS Error:", e);
       setIsSpeaking(false);
-      setIsLoading(false);
-      toast.error("読み上げの準備に失敗しました");
-    }
+    };
+
+    window.speechSynthesis.speak(utterance);
   }, []);
 
   const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0; // 先頭に戻す
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
     }
-    setIsSpeaking(false);
-    setIsLoading(false);
   }, []);
 
-  return { speak, stop, isSpeaking, isSupported, isLoading };
+  return { speak, stop, isSpeaking, isSupported };
 }
