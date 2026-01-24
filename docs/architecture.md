@@ -16,7 +16,7 @@ Next.js App Router をベースに構築され、Google Gemini API を活用し�
 ### AI / Backend Services
 - **LLM**: Google Gemini Pro (`gemini-3-pro-preview`) - テキスト生成、対話制御
 - **Image Generation**: Google Gemini Pro Vision / Imagen (`gemini-3-pro-image-preview`) - 解説イラスト生成
-- **Speech**: Web Speech API (Browser Native) or External TTS Service (Future)
+- **Speech**: Web Speech API (Browser Native) & Server-side TTS (OpenAI compatible API)
 
 ### State Management & Storage
 - **Local State**: React Hooks (`useState`, `useReducer`)
@@ -80,8 +80,9 @@ interface ChatMessage {
   content: string; // テキスト本文
   agentId?: string; // どのエージェントが発言したか
   timestamp: number;
-  images?: string[]; // 生成された画像のURL/DataURI
-  relatedTopic?: string; // カテゴリ分類
+  imageUrl?: string; // 生成された画像のURL
+  audioUrl?: string; // 生成された音声のURL
+  style?: string; // 説明スタイル
 }
 ```
 
@@ -93,8 +94,9 @@ interface ChatSession {
   id: string;
   title: string; // 最初の質問などから生成
   messages: ChatMessage[];
-  createdAt: number;
-  updatedAt: number;
+  topics?: string[]; // カテゴリ分類・トピック
+  startTime: number;
+  lastUpdated: number;
 }
 ```
 
