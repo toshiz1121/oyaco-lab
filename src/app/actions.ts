@@ -1,6 +1,6 @@
 "use server";
 
-import { decideAgent, generateExpertResponse, generateIllustrationPrompt, generateIllustration } from "@/lib/agents/core";
+import { decideAgent, generateExpertResponse, generateIllustrationPrompt, generateIllustration, ExplanationStyle } from "@/lib/agents/core";
 import { AgentResponse, AgentRole } from "@/lib/agents/types";
 
 export interface ConsultationResult {
@@ -9,16 +9,20 @@ export interface ConsultationResult {
   error?: string;
 }
 
-export async function consultAction(question: string): Promise<ConsultationResult> {
+export async function consultAction(
+  question: string,
+  history: { role: string, content: string }[] = [],
+  style: ExplanationStyle = 'default'
+): Promise<ConsultationResult> {
   try {
-    console.log(`Consultation started for: "${question}"`);
+    console.log(`Consultation started for: "${question}" (Style: ${style})`);
 
     // 1. Decide Agent
-    const agentId = await decideAgent(question);
+    const agentId = await decideAgent(question, history);
     console.log(`Selected agent: ${agentId}`);
 
     // 2. Generate Response
-    const text = await generateExpertResponse(agentId, question);
+    const text = await generateExpertResponse(agentId, question, history, style);
     console.log(`Generated text: ${text.slice(0, 50)}...`);
 
     // 3. Generate Illustration (Parallel with Speech if needed, but here sequential for simplicity first)

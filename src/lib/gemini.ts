@@ -21,6 +21,9 @@ export async function callGeminiApi(
     throw new Error("GEMINI_API_KEY is not set.");
   }
 
+  // デバッグ用: キーの形式確認（セキュリティのため一部のみ表示）
+  console.log(`API Key check: Length=${API_KEY.length}, Prefix=${API_KEY.substring(0, 4)}***`);
+
   const genAI = new GoogleGenerativeAI(API_KEY);
   const model = genAI.getGenerativeModel({ model: modelName });
 

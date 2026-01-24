@@ -5,10 +5,19 @@ import { agents } from './definitions';
 const MODEL_NAME_TEXT = "gemini-3-pro-preview";
 const MODEL_NAME_IMAGE = "gemini-3-pro-image-preview";
 
-export async function decideAgent(question: string): Promise<AgentRole> {
+export type ExplanationStyle = 'default' | 'metaphor' | 'simple' | 'detail';
+
+export async function decideAgent(
+  question: string,
+  history: { role: string, content: string }[] = []
+): Promise<AgentRole> {
+  const historyText = history.length > 0 
+    ? `Current Conversation Context:\n${history.map(m => `${m.role}: ${m.content}`).join('\n')}\n`
+    : '';
+
   const prompt = `
     You are an orchestrator for a Kids Science Lab.
-    Your task is to classify the user's question and select the best expert to answer it.
+    Your task is to classify the user's question and select the best expert to answer it, considering the conversation history.
     
     Available Experts:
     - scientist: Physics, chemistry, general science, technology.
@@ -18,6 +27,8 @@ export async function decideAgent(question: string): Promise<AgentRole> {
     - artist: Art, colors, feelings, beauty, creative questions.
     
     If the question doesn't fit any specific expert, choose 'scientist' as a default or 'educator' if it's about general guidance or life advice.
+    
+    ${historyText}
     
     User Question: "${question}"
     
@@ -46,16 +57,36 @@ export async function decideAgent(question: string): Promise<AgentRole> {
   }
 }
 
-export async function generateExpertResponse(agentId: AgentRole, question: string): Promise<string> {
+export async function generateExpertResponse(
+  agentId: AgentRole, 
+  question: string,
+  history: { role: string, content: string }[] = [],
+  style: ExplanationStyle = 'default'
+): Promise<string> {
   const agent = agents[agentId];
+  
+  let styleInstruction = "難しすぎる言葉は使わず、比喩や具体例を使って分かりやすく説明してください。";
+  if (style === 'metaphor') {
+    styleInstruction = "特に「例え話」を重視して説明してください。子供が想像しやすい身近なものに例えてください。";
+  } else if (style === 'simple') {
+    styleInstruction = "幼稚園児でもわかるくらい、とことん簡単な言葉で短く説明してください。";
+  } else if (style === 'detail') {
+    styleInstruction = "少し詳しく、小学校高学年向けに科学的な仕組みも踏まえて説明してください。";
+  }
+
+  const historyText = history.length > 0 
+    ? `これまでの会話:\n${history.map(m => `${m.role === 'user' ? '子供' : agent.nameJa}: ${m.content}`).join('\n')}\n`
+    : '';
   
   const prompt = `
     ${agent.persona}
     
     以下の質問に、あなたのペルソナ（口調・性格）で答えてください。
     対象は小学生（低学年～中学年）です。
-    難しすぎる言葉は使わず、比喩や具体例を使って分かりやすく説明してください。
+    ${styleInstruction}
     150文字〜200文字程度で、子どもが飽きない長さにまとめてください。
+    
+    ${historyText}
     
     質問: "${question}"
   `;
