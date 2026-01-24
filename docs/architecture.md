@@ -1,328 +1,116 @@
-# Masterpiece Maker - アーキテクチャ設計書
+# Architecture Documentation
 
-**最終更新**: 2026-01-07
+## 1. Overview
+Kids Science Lab は、子供たちの素朴な疑問に対して、個性豊かなAIエージェント（博士や専門家）が対話形式で答え、画像や音声を交えて解説するWebアプリケーションです。
+Next.js App Router をベースに構築され、Google Gemini API を活用したマルチモーダルな体験を提供します。
 
-## 目次
+## 2. Tech Stack
 
-1. [システム概要](#システム概要)
-2. [全体アーキテクチャ](#全体アーキテクチャ)
-3. [技術スタック](#技術スタック)
-4. [データモデル](#データモデル)
-5. [コンポーネント設計](#コンポーネント設計)
-6. [インフラストラクチャ](#インフラストラクチャ)
-7. [セキュリティ設計](#セキュリティ設計)
+### Frontend
+- **Framework**: [Next.js 14+](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/) (Radix UI based)
+- **Icons**: Lucide React
 
----
+### AI / Backend Services
+- **LLM**: Google Gemini Pro (`gemini-3-pro-preview`) - テキスト生成、対話制御
+- **Image Generation**: Google Gemini Pro Vision / Imagen (`gemini-3-pro-image-preview`) - 解説イラスト生成
+- **Speech**: Web Speech API (Browser Native) or External TTS Service (Future)
 
-## システム概要
+### State Management & Storage
+- **Local State**: React Hooks (`useState`, `useReducer`)
+- **Persistence**: `localStorage` (Chat history persistence on client-side for MVP)
 
-Masterpiece Makerは、ユーザーが指定したテーマを巨匠の画風で絵画化するAIエンターテインメント・プラットフォームです。Next.jsを中心としたモダンなWebアプリケーションとして構築し、AI機能はImage MCP (Gemini 3.0 Pro Image) を活用します。
+## 3. Agent Architecture
 
----
+本システムは **Orchestrator-Workers Pattern** を採用しています。ユーザーの質問をまず「オーケストレーター」が受け取り、最適な「専門家エージェント」に振り分けます。
 
-## 全体アーキテクチャ
+### Core Components
+- **Orchestrator Agent**: ユーザーの入力内容を分析し、適切な専門家（Scientist, Biologist, etc.）を選定します。
+- **Expert Agents**: 特定の分野（科学、生物、歴史、芸術など）に特化したペルソナを持つエージェント。回答の生成と、画像生成プロンプトの作成を行います。
+- **Gemini Wrapper**: AIモデルとの通信を抽象化し、エラーハンドリングやレスポンスの整形を行います。
 
-```mermaid
-graph TD
-    Client[Client Browser]
-    
-    subgraph "Frontend Layer (Next.js)"
-        UI[UI Components]
-        State[State Management]
-        APIRoutes[API Routes]
-    end
-    
-    subgraph "Application Layer"
-        Auth[Auth Service]
-        Gallery[Gallery Service]
-        Payment[Payment Service]
-    end
-    
-    subgraph "AI & Processing Layer"
-        Queue[Job Queue (Redis)]
-        Worker[Image Worker]
-        ImageMCP[Image MCP]
-        Gemini[Gemini API]
-    end
-    
-    subgraph "Data Layer"
-        DB[(PostgreSQL)]
-        Storage[Object Storage (S3)]
-        Cache[Redis Cache]
-    end
-    
-    Client -->|HTTPS| UI
-    UI --> APIRoutes
-    APIRoutes --> Auth
-    APIRoutes --> Gallery
-    APIRoutes --> Payment
-    
-    Gallery --> Queue
-    Worker --> Queue
-    Worker --> ImageMCP
-    ImageMCP --> Gemini
-    
-    Worker --> Storage
-    Gallery --> DB
-    Auth --> DB
-    
-    Gallery -.-> Cache
-```
+### Interaction Flow
 
----
-
-## 技術スタック
-
-### Frontend / Application Server
-- **Framework**: Next.js 14 (App Router)
-  - React Server Componentsによるパフォーマンス最適化
-  - API Routesによるバックエンドロジックの実装
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS + shadcn/ui
-  - 高速な開発と一貫したデザインシステム
-- **State Management**: Zustand
-  - 軽量で使いやすい状態管理
-
-### Backend Services
-- **Image Generation**: Python (Image MCP)
-  - `google-genai` SDKを使用したGemini統合
-- **Authentication**: NextAuth.js (Auth.js)
-  - ソーシャルログインとメール認証のサポート
-- **Database ORM**: Prisma
-  - 型安全なデータベース操作
-
-### Infrastructure
-- **Hosting**: Vercel (推奨)
-- **Database**: Vercel Postgres / Neon / Supabase
-- **Storage**: Vercel Blob / AWS S3
-- **Queue**: Upstash Redis / Redis
-
----
-
-## データモデル
-
-### ER図
-
-```mermaid
-erDiagram
-    User ||--o{ Artwork : creates
-    User ||--o{ Comment : writes
-    User ||--o{ Like : gives
-    User ||--o{ Follow : follows
-    
-    Artist ||--o{ Artwork : style_of
-    
-    Artwork ||--o{ Comment : has
-    Artwork ||--o{ Like : receives
-    
-    User {
-        string id PK
-        string email
-        string name
-        string image
-        string plan
-        datetime created_at
-    }
-    
-    Artist {
-        string id PK
-        string name
-        string style_description
-        string prompt_template
-        string thumbnail_url
-    }
-    
-    Artwork {
-        string id PK
-        string title
-        string prompt
-        string image_url
-        boolean is_public
-        int likes_count
-        datetime created_at
-    }
-    
-    Comment {
-        string id PK
-        string content
-        datetime created_at
-    }
-```
-
-### 主要テーブル定義
-
-**Users**:
-- `id`: UUID (Primary Key)
-- `email`: String (Unique)
-- `name`: String
-- `plan`: Enum ('free', 'premium')
-
-**Artists** (画風定義):
-- `id`: String (e.g., 'picasso', 'van-gogh')
-- `name`: String
-- `prompt_template`: String (e.g., "A {theme} in the style of Pablo Picasso...")
-- `voice_persona`: Text (解説用ペルソナ)
-
-**Artworks**:
-- `id`: UUID
-- `user_id`: UUID (Foreign Key)
-- `artist_id`: String (Foreign Key)
-- `prompt`: Text (ユーザー入力テーマ)
-- `final_prompt`: Text (実際に生成に使用したプロンプト)
-- `image_url`: String
-- `status`: Enum ('pending', 'processing', 'completed', 'failed')
-
----
-
-## コンポーネント設計
-
-### Phase 1 (MVP) コンポーネント
-
-1. **ArtistSelector**:
-   - 巨匠のリストを表示し、選択させるカルーセル/グリッドUI
-   - 選択中の画風をハイライト
-
-2. **ThemeInput**:
-   - テーマ入力フォーム
-   - 文字数カウント、入力例表示
-
-3. **GeneratorCanvas**:
-   - 生成プロセスのアニメーション表示
-   - 完了後の画像表示、ズーム機能
-
-4. **GalleryGrid**:
-   - 生成された作品の一覧表示
-   - フィルタリングとソート
-
-### Phase 2 (Entertainment) コンポーネント
-
-1. **ArtworkDescription**:
-   - 巨匠による作品解説（テキスト + 音声読み上げ）
-   - Web Speech APIを利用
-
-2. **BattlePage**:
-   - 2人の巨匠を選択して対決させるUI
-   - 並列画像生成と結果比較
-
-### AI統合フロー
-
-#### 1. 画像生成 (Image MCP)
-1. ユーザーがテーマを入力し、画風を選択
-2. `Artist`テーブルから`prompt_template`を取得
-3. テンプレート内の`{theme}`をユーザー入力で置換
-4. Image MCPの`create_image`ツールを呼び出し
-   - `prompt`: 置換後のプロンプト
-   - `aspect_ratio`: 指定のアスペクト比
-5. 生成された画像をStorageに保存し、URLをDBに記録
-
-#### 2. 解説生成 (Text Gen)
-1. 画像生成完了後、`generateArtistCommentAction`を呼び出し
-2. 巨匠のペルソナ（`voicePersona`）とテーマをシステムプロンプトに埋め込み
-3. Gemini API (gemini-3-pro-preview等) でテキスト生成
-4. 生成されたテキストをフロントエンドに返却
-5. Web Speech APIで読み上げ
-
-#### 3. 並列処理アーキテクチャ (Phase 9.3)
-
-**概要**: 画像生成と解説生成を並列実行することで、処理時間を約24%短縮（55秒 → 42秒）
-
-**実装方式**:
-```typescript
-// Promise.allSettledによる並列実行
-const [imageResult, commentResult] = await Promise.allSettled([
-  uploadAndTransformAction(base64Image, artistId, theme, instruction),
-  generateArtistCommentAction(artistId, theme)
-]);
-```
-
-**特徴**:
-- **堅牢なエラーハンドリング**: `Promise.allSettled`により、一方が失敗しても他方の結果を取得可能
-- **進捗表示**: 各タスクの完了状態をリアルタイムで表示
-  - `imageGeneration`: 画像生成の完了状態
-  - `comment`: 解説生成の完了状態
-- **UX改善**: プログレスバーとチェックマークにより、ユーザーは処理状況を視覚的に把握可能
-
-**処理フロー**:
 ```mermaid
 sequenceDiagram
-    participant User
-    participant Frontend
-    participant ImageAPI
-    participant CommentAPI
+    participant User as Child (User)
+    participant UI as Chat Interface
+    participant Orch as Orchestrator
+    participant Expert as Expert Agent
+    participant Gemini as Gemini API
+    participant Storage as LocalStorage
+
+    User->>UI: 「空はなぜ青いの？」
+    UI->>Orch: decideAgent("空はなぜ青いの？")
+    Orch->>Gemini: Classify Intent
+    Gemini-->>Orch: "scientist"
+    Orch-->>UI: AgentRole: scientist
     
-    User->>Frontend: 変換ボタンクリック
-    Frontend->>Frontend: 進捗状態初期化
+    UI->>Expert: generateResponse("空はなぜ青いの？")
+    Expert->>Gemini: Generate Answer (Persona: Scientist)
+    Gemini-->>Expert: "太陽の光が空気で散乱するからじゃ..."
+    Expert-->>UI: Text Answer
     
-    par 並列実行
-        Frontend->>ImageAPI: 画像生成リクエスト
-        ImageAPI-->>Frontend: 画像URL返却
-        Frontend->>Frontend: imageGeneration = true
-    and
-        Frontend->>CommentAPI: 解説生成リクエスト
-        CommentAPI-->>Frontend: 解説テキスト返却
-        Frontend->>Frontend: comment = true
+    par Generate Illustration
+        UI->>Expert: generateIllustrationPrompt()
+        Expert->>Gemini: Create Image Prompt
+        Gemini-->>Expert: "Blue sky, sun scattering light..."
+        Expert->>UI: Image Prompt
+        UI->>Gemini: Generate Image
+        Gemini-->>UI: Image Data (Base64/URL)
     end
-    
-    Frontend->>User: 完成画面表示
+
+    UI->>Storage: Save Chat Log
+    UI-->>User: Display Answer + Image
 ```
 
-**パフォーマンス指標**:
-- **従来**: 画像生成（30秒）→ 解説生成（25秒）= 合計55秒
-- **並列化後**: max(画像生成30秒, 解説生成25秒) + オーバーヘッド = 約42秒
-- **短縮率**: 約24%（13秒削減）
+## 4. Data Models
 
-#### 4. ボトルネック分析 (Phase 9.3)
+### Chat Message
+会話の履歴は以下の構造で管理されます。
 
-**Phase 3-1実験**: 画像サイズ削減（1024x1024 → 512x512）の効果検証
+```typescript
+type Role = "user" | "model";
 
-**結果**: ❌ 処理時間に影響なし（44秒、変化なし）
-
-**真のボトルネック**:
+interface ChatMessage {
+  id: string;
+  role: Role;
+  content: string; // テキスト本文
+  agentId?: string; // どのエージェントが発言したか
+  timestamp: number;
+  images?: string[]; // 生成された画像のURL/DataURI
+  relatedTopic?: string; // カテゴリ分類
+}
 ```
-総処理時間（42秒）
-├─ Gemini API処理: 40-45秒（95%）← 制御不可
-└─ データ転送: 2秒（5%）
+
+### Chat Session
+一連の会話はセッションとしてグループ化されます。
+
+```typescript
+interface ChatSession {
+  id: string;
+  title: string; // 最初の質問などから生成
+  messages: ChatMessage[];
+  createdAt: number;
+  updatedAt: number;
+}
 ```
 
-**重要な発見**:
-1. **API処理時間が支配的**: Gemini APIの内部処理時間（モデル推論）が全体の95%を占める
-2. **画像サイズの影響は限定的**: データ転送量を75%削減しても、全体への影響は5%のみ
-3. **並列処理が最も効果的**: 独立した処理の並列化が唯一の有効な最適化手段
+## 5. Directory Structure
 
-**今後の最適化方針**:
-- ✅ **APIパラメータ調整**: `temperature: 0.5`で約5%改善
-- 🔍 **プログレッシブ生成**: 低品質プレビューを即座に表示（体感88%改善）
-- 🔍 **ローカルキャッシュ**: 2回目以降の生成を即座に表示（99.8%改善）
-- 🔍 **プリジェネレーション**: 人気テーマを事前生成（99.8%改善）
+主要なディレクトリ構成は以下の通りです。
 
-**詳細**: [`docs/future-performance-strategy.md`](./future-performance-strategy.md)を参照
+- `src/app`: Next.js App Router ページコンポーネント
+- `src/components`: UIコンポーネント (Atomic Design的な粒度で配置)
+  - `ui/`: shadcn/ui コンポーネント
+- `src/lib`: ユーティリティ、ビジネスロジック
+  - `agents/`: AIエージェント関連のロジック (`core.ts`, `definitions.ts`)
+  - `gemini.ts`: Gemini API クライアント
+  - `chat-history.ts`: 履歴管理ロジック
 
----
-
-## インフラストラクチャ詳細
-
-### 開発環境
-- Docker Composeを使用したローカル環境構築
-  - PostgreSQL, Redis, MinIO (S3互換)
-
-### 本番環境 (Vercel構成案)
-- **Frontend/API**: Vercel Serverless Functions
-- **Database**: Vercel Postgres
-- **Storage**: Vercel Blob
-- **KV Store**: Vercel KV (Redis)
-
----
-
-## セキュリティ設計
-
-1. **認証・認可**:
-   - NextAuth.jsによるセキュアなセッション管理
-   - APIルートの保護 (Middleware)
-
-2. **入力検証**:
-   - Zodによるスキーマバリデーション
-   - プロンプトインジェクション対策 (NGワードフィルタ)
-
-3. **データ保護**:
-   - データベースの暗号化 (At rest / In transit)
-   - 画像のアクセス制御 (Signed URLs)
+## 6. Future Considerations
+- **Backend Database**: 履歴の永続化と親向けレポート機能の強化のために、SupabaseやVercel PostgresなどのDB導入を検討。
+- **Voice Interaction**: Web Speech APIだけでなく、より高品質な音声合成(TTS)サービスの統合。
+- **User Accounts**: 親と子のプロファイル管理、認証機能の実装。
