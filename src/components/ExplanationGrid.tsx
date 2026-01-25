@@ -100,11 +100,14 @@ const getPanelStyle = (totalSteps: number, stepIndex: number): React.CSSProperti
   const row = Math.floor(stepIndex / 2); // 0 or 1
   const col = stepIndex % 2; // 0 or 1
   
+  // タイトル部分をクロップするために、画像を上方向にオフセット
+  const titleCropOffset = '-12%'; // タイトル分を上にずらす
+  
   return {
       width: '200%',
-      height: '200%',
+      height: '224%', // 高さを増やしてクロップ分を補う (200% + 24%)
       position: 'absolute',
-      top: row === 0 ? '0%' : '-100%',
+      top: row === 0 ? titleCropOffset : `calc(-100% + ${titleCropOffset})`,
       left: col === 0 ? '0%' : '-100%',
       objectFit: 'cover'
   };

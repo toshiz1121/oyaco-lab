@@ -133,22 +133,19 @@ export function ResultView({ response, agent, onStartListening, isListening, que
         </div>
       )}
       
-      {/* Main Content - Grid */}
-      <div className="flex-1 p-4 pb-80 flex items-start justify-center overflow-y-auto">
-        <div className="w-full max-w-3xl aspect-[3/4] md:aspect-[4/3] bg-white rounded-3xl shadow-sm border-4 border-slate-800 p-2 mt-4">
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 p-4 flex flex-col items-center overflow-y-auto pb-24">
+        {/* Grid */}
+        <div className="w-full max-w-[1000px] aspect-[3/4] md:aspect-[4/3] bg-white rounded-3xl shadow-sm border-4 border-slate-800 p-2 mt-4">
             <ExplanationGrid
                 imageUrl={response.imageUrl}
                 totalSteps={steps.length}
                 currentStepIndex={currentStepIndex}
             />
         </div>
-      </div>
 
-      {/* Bottom Area (Fixed) */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 space-y-3 bg-gradient-to-t from-sky-100 via-sky-50 to-transparent pt-8">
-        
-        {/* Agent & Text Bubble */}
-        <div className="flex items-end gap-3 max-w-4xl mx-auto">
+        {/* Agent & Text Bubble - Below Grid */}
+        <div className="flex items-end gap-3 max-w-[1000px] w-full mt-6 mb-4">
             {/* Agent Avatar */}
             <div className="flex flex-col items-center shrink-0 mb-1">
                 <Avatar className={`h-12 w-12 md:h-16 md:w-16 border-3 border-${agent.color || 'blue'}-500 bg-white`}>
@@ -159,7 +156,7 @@ export function ResultView({ response, agent, onStartListening, isListening, que
             </div>
 
             {/* Bubble */}
-            <div className="flex-1 bg-white rounded-3xl rounded-bl-none p-4 md:p-5 shadow-md border border-slate-200 relative max-h-32 overflow-y-auto">
+            <div className="flex-1 bg-white rounded-3xl rounded-bl-none p-4 md:p-5 shadow-md border border-slate-200 relative min-h-48 max-h-64 overflow-y-auto">
                 {isLoading ? (
                     <div className="flex items-center gap-2 text-slate-500">
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -185,34 +182,15 @@ export function ResultView({ response, agent, onStartListening, isListening, que
                 </Button>
             </div>
         </div>
+      </div>
 
-        {/* Input Bar */}
-        <div className="max-w-4xl mx-auto h-32 flex flex-col items-center justify-center relative">
-            <div className="absolute top-0">
-                <MicButton
-                    isListening={isListening}
-                    onClick={onStartListening}
-                    size="lg"
-                />
-            </div>
-            
-            <div className="mt-16 w-full bg-white/80 backdrop-blur-md rounded-full p-2 shadow-lg border border-white flex items-center gap-3">
-                <div className="w-16 h-16 shrink-0" /> {/* Spacer for MicButton alignment */}
-                <div className="flex-1 px-3">
-                    {isListening ? (
-                        <div className="flex items-center gap-1 h-8">
-                            <span className="text-sky-600 font-bold animate-pulse">きいています...</span>
-                            {/* Fake Waveform */}
-                            {[...Array(5)].map((_, i) => (
-                                 <div key={i} className="w-1 bg-sky-400 rounded-full animate-bounce" style={{ height: Math.random() * 20 + 10 + 'px', animationDelay: i * 0.1 + 's' }} />
-                            ))}
-                        </div>
-                    ) : (
-                        <span className="text-slate-400 text-sm font-medium">もっとしつもんする？ボタンをおしてね</span>
-                    )}
-                </div>
-            </div>
-        </div>
+      {/* Bottom MicButton (Fixed) */}
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+        <MicButton
+          isListening={isListening}
+          onClick={onStartListening}
+          size="lg"
+        />
       </div>
     </div>
   );
