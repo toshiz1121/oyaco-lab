@@ -28,6 +28,7 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
   const [selectedExpert, setSelectedExpert] = useState<AgentRole | undefined>(undefined);
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
   const [isApiComplete, setIsApiComplete] = useState(false);
+  const [isContinuing, setIsContinuing] = useState(false);
 
   // Speech Recognition
   const {
@@ -97,9 +98,15 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
 
     // 質問内容を保存
     setCurrentQuestion(question);
+    
+    // 前回の専門家を保持
+    const prevExpert = selectedExpert;
+    
+    // いったん「選択中」にする（ただし演出は判定後にスキップする可能性あり）
     setViewMode('selecting');
     setSelectedExpert(undefined);
     setIsApiComplete(false);
+    setIsContinuing(false);
 
     try {
         // 1. Save User Message
@@ -126,10 +133,17 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
             });
 
             setLatestResponse(result.data);
-            setSelectedExpert(result.data.agentId);
+            const newExpert = result.data.agentId;
+            setSelectedExpert(newExpert);
             setIsApiComplete(true);
             
-            // もしすでにthinking画面にいるなら、result画面に遷移
+            // 同じ専門家の場合は演出をスキップして直接 thinking へ
+            if (newExpert === prevExpert) {
+                setIsContinuing(true);
+                setViewMode('thinking');
+            }
+            
+            // もしすでにthinking画面にいるなら（通常遷移後）、result画面に遷移
             if (viewMode === 'thinking') {
                 setViewMode('result');
             }
@@ -176,6 +190,7 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
         <ThinkingView
           agent={agent}
           question={currentQuestion}
+          isContinuing={isContinuing}
         />
     );
   }

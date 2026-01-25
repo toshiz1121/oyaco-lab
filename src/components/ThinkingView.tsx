@@ -7,9 +7,10 @@ import { Agent } from "@/lib/agents/types";
 interface ThinkingViewProps {
   agent: Agent;
   question: string;
+  isContinuing?: boolean;
 }
 
-export function ThinkingView({ agent, question }: ThinkingViewProps) {
+export function ThinkingView({ agent, question, isContinuing }: ThinkingViewProps) {
   return (
     <div className="flex flex-col items-center justify-center h-[600px] w-full bg-gradient-to-b from-sky-50 to-white rounded-3xl shadow-lg border-4 border-sky-100 p-8">
       {/* 質問内容 */}
@@ -78,7 +79,9 @@ export function ThinkingView({ agent, question }: ThinkingViewProps) {
         }}
         className="text-center"
       >
-        <p className="text-xl font-bold text-sky-700">かんがえているよ...</p>
+        <p className="text-xl font-bold text-sky-700">
+          {isContinuing ? "ひきつづき かんがえているよ..." : "かんがえているよ..."}
+        </p>
         
         {/* ドットアニメーション */}
         <div className="flex justify-center gap-2 mt-4">
