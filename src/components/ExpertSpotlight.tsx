@@ -61,7 +61,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
   const selectedAgent = agents[displayableExperts[spotlightIndex]];
 
   return (
-    <div className="flex flex-col items-center justify-center h-[600px] w-full bg-gradient-to-b from-sky-50 to-white rounded-3xl shadow-lg border-4 border-sky-100 p-8">
+    <div className="flex flex-col items-center justify-center h-[800px] md:h-[1000px] w-full bg-gradient-to-b from-sky-50 to-white rounded-3xl shadow-lg border-4 border-sky-100 p-8">
       {/* 質問内容 */}
       {question && (
         <motion.div
