@@ -3,7 +3,7 @@ import { AgentRole, ExplanationStep } from './types';
 import { agents } from './definitions';
 
 const MODEL_NAME_TEXT = "gemini-2.0-flash";
-const MODEL_NAME_IMAGE = "gemini-3-pro-image-preview"; // 画像生成モデルは元のまま（さきほど画像が出ていたので）
+const MODEL_NAME_IMAGE = "gemini-3-pro-image-preview"; // 画像生成モデルは元のまま(さきほど画像が出ていたので)
 
 export type ExplanationStyle = 'default' | 'metaphor' | 'simple' | 'detail';
 
@@ -86,10 +86,12 @@ export async function generateExpertResponse(
     ${styleInstruction}
 
     【重要】回答は必ず以下のJSON形式で出力してください。Markdownのコードブロックは含めないでください。
-    回答の複雑さに応じて、ステップ数を1, 2, または4つに分けてください。
-    - 簡単な回答: 1ステップ
-    - 中くらいの回答: 2ステップ
-    - 複雑な回答: 4ステップ
+    原則として、回答を4つのステップに分解してください。
+    内容が非常にシンプルな場合でも、子供がより深く理解できるように、前提知識・仕組み・具体的な例・まとめといった形で順を追って必ず4ステップで説明してください。
+    
+    【超重要】各ステップの「text」は、それ単独で読んでも意味が通じる完全な文章にしてください。
+    前のステップからの続きではなく、各ステップが独立して理解できる説明にしてください。
+    例: NG「だから、海は青く見えるんだよ」 → OK「散らばった青い光が目に入るから、海は青く見えるんだよ」
 
     JSON形式:
     {
@@ -97,7 +99,7 @@ export async function generateExpertResponse(
       "steps": [
         {
           "stepNumber": 1,
-          "text": "このステップの説明文（子供に語りかける口調で）",
+          "text": "このステップの説明文（子供に語りかける口調で、このステップだけで完結する内容）",
           "visualDescription": "このステップの挿絵を描くための画像生成プロンプト（英語）"
         }
       ]
