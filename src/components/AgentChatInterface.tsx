@@ -6,25 +6,25 @@ import { consultAction } from "@/app/actions";
 import { createSession, addMessageToSession, ChatSession, ChatMessage } from "@/lib/chat-history";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { agents } from "@/lib/agents/definitions";
-import { AgentResponse } from "@/lib/agents/types";
+import { AgentResponse, AgentRole } from "@/lib/agents/types";
 
 // Views
 import { InputView } from "./InputView";
 import { ResultView } from "./ResultView";
-import { Loader2 } from "lucide-react";
+import { ExpertSpotlight } from "./ExpertSpotlight";
 
 interface AgentChatInterfaceProps {
   initialQuestion?: string;
   onNewSession?: (session: ChatSession) => void;
 }
 
-type ViewMode = 'input' | 'thinking' | 'result';
+type ViewMode = 'input' | 'selecting' | 'result';
 
 export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatInterfaceProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('input');
   const [latestResponse, setLatestResponse] = useState<AgentResponse | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [thinkingMessage, setThinkingMessage] = useState("はかせをよんでいるよ...");
+  const [selectedExpert, setSelectedExpert] = useState<AgentRole | undefined>(undefined);
 
   // Speech Recognition
   const {
@@ -92,8 +92,8 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
     // Clear transcript to prevent re-submission loop if error occurs and we return to input
     resetTranscript();
 
-    setViewMode('thinking');
-    setThinkingMessage(getThinkingMessage(question));
+    setViewMode('selecting');
+    setSelectedExpert(undefined); // リセット
 
     try {
         // 1. Save User Message
@@ -103,14 +103,6 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
         });
 
         // 2. Call API
-        // Context? We could pass recent history if we had it in state, 
-        // but for now let's just pass empty or minimal context 
-        // since we are moving to a "Single Page" flow, maybe context is less critical 
-        // or we fetch it from the session storage if we needed robust history.
-        // For this UI demo, we'll pass empty context to force fresh answers or simple context.
-        // Wait, 'consultAction' expects history.
-        // We should maintain a local minimal history for context consistency?
-        // Let's try to pass the last response if available.
         const history = latestResponse ? [
             { role: 'assistant', content: latestResponse.text }
         ] : [];
@@ -128,10 +120,12 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
             });
 
             setLatestResponse(result.data);
-            setViewMode('result');
+            // 専門家を選択（アニメーションがこれを受け取って停止する）
+            setSelectedExpert(result.data.agentId);
+            // 実際の画面遷移はExpertSpotlightのonAnimationCompleteで行う
         } else {
             toast.error("エラーが発生しました");
-            setViewMode('input'); // Return to start
+            setViewMode('input');
         }
 
     } catch (e) {
@@ -141,20 +135,17 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
     }
   };
 
-  const getThinkingMessage = (q: string) => {
-      if (q.includes("なぜ") || q.includes("なんで")) return "りゆうをかんがえているよ...";
-      if (q.includes("どこ")) return "ばしょをさがしているよ...";
-      if (q.includes("だれ")) return "ひとをさがしているよ...";
-      return "はかせをよんでいるよ...";
+  const handleSpotlightComplete = () => {
+    setViewMode('result');
   };
 
   // Renders
-  if (viewMode === 'thinking') {
+  if (viewMode === 'selecting') {
     return (
-        <div className="flex flex-col items-center justify-center h-[600px] w-full bg-white/80 rounded-3xl shadow-lg border-4 border-sky-100 p-8">
-            <Loader2 className="h-16 w-16 text-sky-500 animate-spin mb-4" />
-            <h2 className="text-xl font-bold text-sky-700 animate-pulse">{thinkingMessage}</h2>
-        </div>
+        <ExpertSpotlight
+          selectedExpert={selectedExpert}
+          onAnimationComplete={handleSpotlightComplete}
+        />
     );
   }
 
