@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { consultAction } from "@/app/actions";
-import { Loader2, Mic, Volume2, Image as ImageIcon, Sparkles, BookOpen, Baby, Search } from "lucide-react";
+import { Loader2, Mic, Volume2, Image as ImageIcon, Sparkles, BookOpen, Baby, Search, Send, MicOff } from "lucide-react";
 import { toast } from "sonner";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { createSession, addMessageToSession, ChatSession, ChatMessage } from "@/lib/chat-history";
 import { ExplanationStyle } from "@/lib/agents/core";
 import { agents } from "@/lib/agents/definitions";
@@ -29,6 +30,53 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { isSpeaking, speak, stop } = useTextToSpeech();
+  
+  // 音声認識フック
+  const {
+    transcript,
+    isListening,
+    startListening,
+    stopListening,
+    resetTranscript,
+    isSupported,
+    error: speechError
+  } = useSpeechRecognition();
+  
+  // 音声入力開始時の入力を保持するためのstate
+  const [previousInput, setPreviousInput] = useState("");
+
+  // 音声認識エラーのハンドリング
+  useEffect(() => {
+    if (speechError) {
+      // ユーザーキャンセルや許可拒否の場合はトーストを出さない、あるいは控えめに
+      if (speechError === 'not-allowed') {
+         toast.error("マイクの使用が許可されていません。ブラウザの設定を確認してください。");
+      } else if (speechError === 'no-speech') {
+         // 無言で終了した場合は無視するか、軽い通知
+      } else {
+         toast.error(`音声認識エラー: ${speechError}`);
+      }
+    }
+  }, [speechError]);
+
+  // 音声認識結果を入力欄に反映
+  useEffect(() => {
+    if (isListening && transcript) {
+      // 既存の入力 + 音声認識結果
+      // transcriptは認識セッションごとにリセットされるため、開始時の入力を基準にする
+      const separator = previousInput && !previousInput.endsWith(' ') ? ' ' : '';
+      setInput(`${previousInput}${separator}${transcript}`);
+    }
+  }, [transcript, isListening, previousInput]);
+
+  const handleMicClick = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      setPreviousInput(input);
+      startListening();
+    }
+  };
 
   // 初期化
   useEffect(() => {
@@ -249,13 +297,26 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
             disabled={isLoading}
             className="flex-1 rounded-full px-4"
           />
+          {isSupported && (
+            <Button
+                size="icon"
+                variant={isListening ? "destructive" : "secondary"}
+                onClick={handleMicClick}
+                disabled={isLoading}
+                className={`rounded-full h-10 w-10 shrink-0 ${isListening ? "animate-pulse" : ""}`}
+                title={isListening ? "音声入力を停止" : "音声入力"}
+            >
+                {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </Button>
+          )}
           <Button
             size="icon"
             onClick={handleSendMessage}
             disabled={isLoading || !input.trim()}
             className="rounded-full h-10 w-10 shrink-0"
+            title="送信"
           >
-            <Mic className="h-5 w-5" />
+            <Send className="h-5 w-5" />
           </Button>
         </div>
       </div>
