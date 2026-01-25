@@ -10,8 +10,8 @@ export type ExplanationStyle = 'default' | 'metaphor' | 'simple' | 'detail';
 export async function decideAgent(
   question: string,
   history: { role: string, content: string }[] = []
-): Promise<AgentRole> {
-  const historyText = history.length > 0 
+): Promise<{ agentId: AgentRole; reason: string }> {
+  const historyText = history.length > 0
     ? `Current Conversation Context:\n${history.map(m => `${m.role}: ${m.content}`).join('\n')}\n`
     : '';
 
@@ -32,28 +32,41 @@ export async function decideAgent(
     
     User Question: "${question}"
     
-    Respond with ONLY the AgentRole string (e.g., "scientist").
+    Respond in JSON format with the agent ID and a child-friendly reason (in Japanese) for why this expert was chosen.
+    The reason should be simple, warm, and easy for elementary school children to understand (e.g., "うちゅうのことがとくいだから").
+    
+    JSON format:
+    {
+      "agentId": "scientist",
+      "reason": "かがくのことがとくいだから"
+    }
   `;
 
   try {
     const data = await callGeminiApi(MODEL_NAME_TEXT, {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.1 }
+      generationConfig: { temperature: 0.3, responseMimeType: "application/json" }
     });
     
-    // クリーニング: 余計な空白や改行、マークダウンの記号を削除
-    let role = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
-    role = role?.replace(/```/g, '').replace(/\n/g, '').trim();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!content) throw new Error("No content generated");
+
+    // Clean up potential markdown code blocks
+    const jsonString = content.replace(/^```json\n|\n```$/g, '').replace(/^```\n|\n```$/g, '');
+    const parsed = JSON.parse(jsonString);
     
-    if (role && Object.keys(agents).includes(role)) {
-        return role as AgentRole;
+    const agentId = parsed.agentId?.toLowerCase();
+    const reason = parsed.reason || "きみのしつもんにこたえられるから";
+    
+    if (agentId && Object.keys(agents).includes(agentId)) {
+        return { agentId: agentId as AgentRole, reason };
     }
-    console.warn(`Orchestrator returned unknown role: ${role}. Fallback to scientist.`);
-    return 'scientist'; // Default fallback
+    console.warn(`Orchestrator returned unknown role: ${agentId}. Fallback to scientist.`);
+    return { agentId: 'scientist', reason: "かがくのことがとくいだから" };
 
   } catch (error) {
     console.error("Agent decision failed:", error);
-    return 'scientist';
+    return { agentId: 'scientist', reason: "かがくのことがとくいだから" };
   }
 }
 

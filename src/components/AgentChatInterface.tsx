@@ -12,19 +12,22 @@ import { AgentResponse, AgentRole } from "@/lib/agents/types";
 import { InputView } from "./InputView";
 import { ResultView } from "./ResultView";
 import { ExpertSpotlight } from "./ExpertSpotlight";
+import { ThinkingView } from "./ThinkingView";
 
 interface AgentChatInterfaceProps {
   initialQuestion?: string;
   onNewSession?: (session: ChatSession) => void;
 }
 
-type ViewMode = 'input' | 'selecting' | 'result';
+type ViewMode = 'input' | 'selecting' | 'thinking' | 'result';
 
 export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatInterfaceProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('input');
   const [latestResponse, setLatestResponse] = useState<AgentResponse | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [selectedExpert, setSelectedExpert] = useState<AgentRole | undefined>(undefined);
+  const [currentQuestion, setCurrentQuestion] = useState<string>('');
+  const [isApiComplete, setIsApiComplete] = useState(false);
 
   // Speech Recognition
   const {
@@ -92,8 +95,11 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
     // Clear transcript to prevent re-submission loop if error occurs and we return to input
     resetTranscript();
 
+    // 質問内容を保存
+    setCurrentQuestion(question);
     setViewMode('selecting');
-    setSelectedExpert(undefined); // リセット
+    setSelectedExpert(undefined);
+    setIsApiComplete(false);
 
     try {
         // 1. Save User Message
@@ -102,7 +108,7 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
             content: question
         });
 
-        // 2. Call API
+        // 2. Call API (非同期で実行し、完了を待つ)
         const history = latestResponse ? [
             { role: 'assistant', content: latestResponse.text }
         ] : [];
@@ -120,9 +126,13 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
             });
 
             setLatestResponse(result.data);
-            // 専門家を選択（アニメーションがこれを受け取って停止する）
             setSelectedExpert(result.data.agentId);
-            // 実際の画面遷移はExpertSpotlightのonAnimationCompleteで行う
+            setIsApiComplete(true);
+            
+            // もしすでにthinking画面にいるなら、result画面に遷移
+            if (viewMode === 'thinking') {
+                setViewMode('result');
+            }
         } else {
             toast.error("エラーが発生しました");
             setViewMode('input');
@@ -136,15 +146,36 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
   };
 
   const handleSpotlightComplete = () => {
-    setViewMode('result');
+    // 専門家選定演出が完了したら、thinking画面に遷移
+    setViewMode('thinking');
   };
+
+  // API完了を監視して、thinking画面からresult画面に遷移
+  useEffect(() => {
+    if (viewMode === 'thinking' && isApiComplete && latestResponse) {
+      setViewMode('result');
+    }
+  }, [viewMode, isApiComplete, latestResponse]);
 
   // Renders
   if (viewMode === 'selecting') {
     return (
         <ExpertSpotlight
           selectedExpert={selectedExpert}
+          selectionReason={latestResponse?.selectionReason}
+          question={currentQuestion}
           onAnimationComplete={handleSpotlightComplete}
+        />
+    );
+  }
+
+  if (viewMode === 'thinking') {
+    // APIが完了してselectedExpertがセットされるまでは、デフォルトのscientistを表示
+    const agent = selectedExpert ? agents[selectedExpert] : agents.scientist;
+    return (
+        <ThinkingView
+          agent={agent}
+          question={currentQuestion}
         />
     );
   }
@@ -153,11 +184,12 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
     const agent = agents[latestResponse.agentId] || agents.scientist;
     return (
         <div className="h-[800px] w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-slate-900/5">
-             <ResultView 
+             <ResultView
                 response={latestResponse}
                 agent={agent}
                 onStartListening={handleMicToggle}
                 isListening={isListening}
+                question={currentQuestion}
              />
         </div>
     );

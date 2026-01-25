@@ -23,4 +23,5 @@ export interface AgentResponse {
   imageUrl?: string; // Generated illustration
   audioUrl?: string; // Generated speech
   isThinking?: boolean;
+  selectionReason?: string; // 子供向けの専門家選定理由
 }

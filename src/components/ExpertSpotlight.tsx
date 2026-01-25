@@ -8,6 +8,8 @@ import { AgentRole } from "@/lib/agents/types";
 
 interface ExpertSpotlightProps {
   selectedExpert?: AgentRole; // API結果が返ってきたらセット
+  selectionReason?: string; // 専門家が選ばれた理由（子供向け）
+  question?: string; // ユーザーの質問内容
   onAnimationComplete?: () => void; // 演出完了時のコールバック
 }
 
@@ -21,37 +23,37 @@ const displayableExperts: AgentRole[] = [
   'educator'
 ];
 
-export function ExpertSpotlight({ selectedExpert, onAnimationComplete }: ExpertSpotlightProps) {
+export function ExpertSpotlight({ selectedExpert, selectionReason, question, onAnimationComplete }: ExpertSpotlightProps) {
   const [spotlightIndex, setSpotlightIndex] = useState(0);
   const [isFinalized, setIsFinalized] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
 
   useEffect(() => {
-    // スポットライトが順番に当たるアニメーション
+    // スポットライトアニメーション
     if (!selectedExpert && !isFinalized) {
       const interval = setInterval(() => {
         setSpotlightIndex((prev) => (prev + 1) % displayableExperts.length);
-      }, 400); // 0.4秒ごとに次の専門家へ
+      }, 250); // 0.25秒ごとに次の専門家へ
 
       return () => clearInterval(interval);
     }
 
-    // 選ばれた専門家が決まったら、そこで停止
+    // 専門家が決まったら停止
     if (selectedExpert && !isFinalized) {
       const selectedIndex = displayableExperts.indexOf(selectedExpert);
       if (selectedIndex !== -1) {
         setSpotlightIndex(selectedIndex);
         setIsFinalized(true);
         
-        // 強調演出を見せるため、1秒待ってからメッセージ表示
+        // 0.3秒後にメッセージ表示
         setTimeout(() => {
           setShowMessage(true);
-        }, 800);
+        }, 300);
 
-        // さらに1.5秒後に次の画面へ遷移
+        // 1.5秒後に次の画面へ遷移
         setTimeout(() => {
           onAnimationComplete?.();
-        }, 2300);
+        }, 1500);
       }
     }
   }, [selectedExpert, isFinalized, onAnimationComplete]);
@@ -60,9 +62,23 @@ export function ExpertSpotlight({ selectedExpert, onAnimationComplete }: ExpertS
 
   return (
     <div className="flex flex-col items-center justify-center h-[600px] w-full bg-gradient-to-b from-sky-50 to-white rounded-3xl shadow-lg border-4 border-sky-100 p-8">
+      {/* 質問内容 */}
+      {question && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 text-center max-w-2xl"
+        >
+          <p className="text-sm text-sky-600 font-medium mb-1">きみのしつもん</p>
+          <p className="text-lg text-sky-900 font-bold bg-white/60 rounded-2xl px-6 py-3 border-2 border-sky-200">
+            {question}
+          </p>
+        </motion.div>
+      )}
+
       {/* タイトル */}
       <h2 className="text-2xl font-bold text-sky-700 mb-8">
-        {isFinalized ? "はかせが決まったよ！" : "はかせをよんでいるよ..."}
+        {isFinalized ? "はかせが決まったよ！" : "だれにきくか かんがえているよ..."}
       </h2>
 
       {/* 専門家一覧 */}
@@ -140,7 +156,7 @@ export function ExpertSpotlight({ selectedExpert, onAnimationComplete }: ExpertS
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-2"
+            className="text-center space-y-3"
           >
             <div className="flex items-center justify-center gap-3">
               <div className="relative w-16 h-16 rounded-full overflow-hidden border-3 border-sky-400">
@@ -152,10 +168,23 @@ export function ExpertSpotlight({ selectedExpert, onAnimationComplete }: ExpertS
                 />
               </div>
               <div className="text-left">
-                <p className="text-sm text-sky-600 font-medium">回答してくれるのは...</p>
+                <p className="text-sm text-sky-600 font-medium">こたえてくれるのは...</p>
                 <p className="text-2xl font-bold text-sky-800">{selectedAgent.nameJa}</p>
               </div>
             </div>
+            
+            {/* 選定理由 */}
+            {selectionReason && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+                className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl px-6 py-3 max-w-md mx-auto"
+              >
+                <p className="text-xs text-yellow-700 font-medium mb-1">えらばれたりゆう</p>
+                <p className="text-base text-yellow-900 font-bold">{selectionReason}</p>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -13,9 +13,10 @@ interface ResultViewProps {
   agent: Agent;
   onStartListening: () => void;
   isListening: boolean;
+  question?: string;
 }
 
-export function ResultView({ response, agent, onStartListening, isListening }: ResultViewProps) {
+export function ResultView({ response, agent, onStartListening, isListening, question }: ResultViewProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isTextActive, setIsTextActive] = useState(false);
   const [audioDuration, setAudioDuration] = useState<number | undefined>(undefined);
@@ -121,13 +122,23 @@ export function ResultView({ response, agent, onStartListening, isListening }: R
   return (
     <div className="flex flex-col h-full bg-sky-50 relative overflow-hidden">
       
+      {/* Question Display (Top) */}
+      {question && (
+        <div className="p-4 pb-2">
+          <div className="max-w-2xl mx-auto bg-white/70 backdrop-blur-sm rounded-2xl px-4 py-2 border-2 border-sky-200 shadow-sm">
+            <p className="text-xs text-sky-600 font-medium mb-0.5">きみのしつもん</p>
+            <p className="text-sm md:text-base text-sky-900 font-bold">{question}</p>
+          </div>
+        </div>
+      )}
+      
       {/* Main Content - Grid */}
       <div className="flex-1 p-4 pb-48 flex items-center justify-center">
         <div className="w-full max-w-2xl aspect-[3/4] md:aspect-[4/3] bg-white rounded-3xl shadow-sm border-4 border-slate-800 p-2">
-            <ExplanationGrid 
-                imageUrl={response.imageUrl} 
-                totalSteps={steps.length} 
-                currentStepIndex={currentStepIndex} 
+            <ExplanationGrid
+                imageUrl={response.imageUrl}
+                totalSteps={steps.length}
+                currentStepIndex={currentStepIndex}
             />
         </div>
       </div>

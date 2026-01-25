@@ -20,8 +20,8 @@ export async function consultAction(
 
     // 1. Decide Agent
     console.log(`[DEBUG] Step 1: Deciding agent...`);
-    const agentId = await decideAgent(question, history);
-    console.log(`[DEBUG] Selected agent: ${agentId}`);
+    const { agentId, reason: selectionReason } = await decideAgent(question, history);
+    console.log(`[DEBUG] Selected agent: ${agentId}, Reason: ${selectionReason}`);
 
     // 2. Generate Response
     console.log(`[DEBUG] Step 2: Generating expert response for ${agentId}...`);
@@ -53,7 +53,8 @@ export async function consultAction(
         steps: responseData.steps,
         imageUrl,
         audioUrl: undefined,
-        isThinking: false
+        isThinking: false,
+        selectionReason
     };
 
     return { success: true, data: response };
