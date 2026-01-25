@@ -99,8 +99,8 @@ export async function generateExpertResponse(
     ${styleInstruction}
 
     【重要】回答は必ず以下のJSON形式で出力してください。Markdownのコードブロックは含めないでください。
-    原則として、回答を4つのステップに分解してください。
-    内容が非常にシンプルな場合でも、子供がより深く理解できるように、前提知識・仕組み・具体的な例・まとめといった形で順を追って必ず4ステップで説明してください。
+    内容が簡単な場合は2ステップ、複雑な場合は4ステップで説明してください。
+    無理にステップ数を増やす必要はありません。わかりやすさを最優先し、適切なステップ数（2〜4ステップ）で説明してください。
     
     【超重要】各ステップの「text」は、それ単独で読んでも意味が通じる完全な文章にしてください。
     前のステップからの続きではなく、各ステップが独立して理解できる説明にしてください。
@@ -173,7 +173,7 @@ export function generateCombinedImagePrompt(steps: ExplanationStep[]): string {
           Panel 2 (Right): ${steps[1].visualDescription}
         `.trim();
     } else {
-        // Default to 4 panels (2x2 grid)
+        // Default to 4 panels (2x2 grid) for 3+ steps
         return `
           Create a comic strip style image divided into 4 equal panels (2x2 grid).
           ${baseStyle}
