@@ -2,8 +2,8 @@ import { callGeminiApi } from '../gemini';
 import { AgentRole, ExplanationStep } from './types';
 import { agents } from './definitions';
 
-const MODEL_NAME_TEXT = "gemini-3-pro-preview";
-const MODEL_NAME_IMAGE = "gemini-3-pro-image-preview";
+const MODEL_NAME_TEXT = "gemini-2.0-flash";
+const MODEL_NAME_IMAGE = "gemini-3-pro-image-preview"; // 画像生成モデルは元のまま（さきほど画像が出ていたので）
 
 export type ExplanationStyle = 'default' | 'metaphor' | 'simple' | 'detail';
 
