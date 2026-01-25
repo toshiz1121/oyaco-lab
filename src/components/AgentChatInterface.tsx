@@ -149,7 +149,8 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
           agentId: result.data.agentId,
           agentName: agent.nameJa,
           imageUrl: result.data.imageUrl,
-          audioUrl: result.data.audioUrl
+          audioUrl: result.data.audioUrl,
+          steps: result.data.steps
         };
 
         const sessionWithAgentMsg = addMessageToSession(sessionId, assistantMsgObj);
@@ -223,21 +224,57 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
                       : "bg-white border border-gray-100 text-gray-800 rounded-bl-none"
                   }`}
                 >
-                  {msg.content}
-                  
-                  {msg.role === "assistant" && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 ml-2 -mr-1 align-middle opacity-50 hover:opacity-100"
-                      onClick={() => handleSpeak(msg.content)}
-                    >
-                      <Volume2 className="h-3.5 w-3.5" />
-                    </Button>
+                  {!msg.steps?.length ? (
+                    <>
+                      {msg.content}
+                      {msg.role === "assistant" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 ml-2 -mr-1 align-middle opacity-50 hover:opacity-100"
+                          onClick={() => handleSpeak(msg.content)}
+                        >
+                          <Volume2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-4 w-full min-w-[300px]">
+                      {msg.steps.map((step, idx) => (
+                        <div key={idx} className="flex flex-col gap-2">
+                           {/* Step Text */}
+                           <div className="flex items-start gap-2">
+                              <span className="font-bold text-primary shrink-0 mt-0.5">#{step.stepNumber}</span>
+                              <span className="text-gray-800">{step.text}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5 ml-auto -mr-1 align-middle opacity-30 hover:opacity-100"
+                                onClick={() => handleSpeak(step.text)}
+                              >
+                                <Volume2 className="h-3.5 w-3.5" />
+                              </Button>
+                           </div>
+
+                           {/* Image Panel */}
+                           {msg.imageUrl && (
+                             <div className="relative overflow-hidden rounded-xl border shadow-sm w-full aspect-[4/3] bg-gray-50">
+                               <img
+                                 src={msg.imageUrl}
+                                 alt={`Step ${step.stepNumber} illustration`}
+                                 className="absolute max-w-none"
+                                 style={getPanelStyle(msg.steps!.length, idx)}
+                               />
+                             </div>
+                           )}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
 
-                {msg.imageUrl && (
+                {/* Fallback Image display (only if no steps but has image) */}
+                {msg.imageUrl && (!msg.steps || msg.steps.length === 0) && (
                   <div className="mt-2 rounded-xl overflow-hidden border shadow-sm max-w-[300px]">
                     <img src={msg.imageUrl} alt="Generated illustration" className="w-full h-auto" />
                   </div>
@@ -323,3 +360,37 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
     </Card>
   );
 }
+
+// Helper for image panel slicing
+const getPanelStyle = (totalSteps: number, stepIndex: number): React.CSSProperties => {
+  if (totalSteps <= 1) return { width: '100%', height: '100%', objectFit: 'cover' };
+  
+  if (totalSteps === 2) {
+    // 2 Panels: Left / Right
+    return {
+        width: '200%',
+        height: '100%',
+        position: 'absolute',
+        top: 0,
+        left: stepIndex === 0 ? '0%' : '-100%',
+        maxWidth: 'none',
+        objectFit: 'cover'
+    };
+  }
+
+  // 4 Panels (default for 3 or 4)
+  // 2x2 Grid
+  // Index 0: TL, 1: TR, 2: BL, 3: BR
+  const row = Math.floor(stepIndex / 2); // 0 or 1
+  const col = stepIndex % 2; // 0 or 1
+  
+  return {
+      width: '200%',
+      height: '200%',
+      position: 'absolute',
+      top: row === 0 ? '0%' : '-100%',
+      left: col === 0 ? '0%' : '-100%',
+      maxWidth: 'none',
+      objectFit: 'cover'
+  };
+};

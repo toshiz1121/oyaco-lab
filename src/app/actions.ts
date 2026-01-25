@@ -1,6 +1,6 @@
 "use server";
 
-import { decideAgent, generateExpertResponse, generateIllustrationPrompt, generateIllustration, ExplanationStyle } from "@/lib/agents/core";
+import { decideAgent, generateExpertResponse, generateIllustrationPrompt, generateIllustration, generateCombinedImagePrompt, ExplanationStyle } from "@/lib/agents/core";
 import { AgentResponse, AgentRole } from "@/lib/agents/types";
 
 export interface ConsultationResult {
@@ -22,12 +22,18 @@ export async function consultAction(
     console.log(`Selected agent: ${agentId}`);
 
     // 2. Generate Response
-    const text = await generateExpertResponse(agentId, question, history, style);
-    console.log(`Generated text: ${text.slice(0, 50)}...`);
+    const responseData = await generateExpertResponse(agentId, question, history, style);
+    console.log(`Generated text: ${responseData.text.slice(0, 50)}...`);
 
     // 3. Generate Illustration (Parallel with Speech if needed, but here sequential for simplicity first)
     // First, generate prompt
-    const imagePrompt = await generateIllustrationPrompt(agentId, question, text);
+    let imagePrompt: string;
+    if (responseData.steps && responseData.steps.length > 0) {
+        imagePrompt = generateCombinedImagePrompt(responseData.steps);
+    } else {
+        // Fallback
+        imagePrompt = await generateIllustrationPrompt(agentId, question, responseData.text);
+    }
     console.log(`Image prompt: ${imagePrompt}`);
 
     // Then generate image
@@ -38,7 +44,8 @@ export async function consultAction(
 
     const response: AgentResponse = {
         agentId,
-        text,
+        text: responseData.text,
+        steps: responseData.steps,
         imageUrl,
         audioUrl: undefined,
         isThinking: false

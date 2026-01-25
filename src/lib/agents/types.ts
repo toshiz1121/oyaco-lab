@@ -10,9 +10,16 @@ export interface Agent {
   color: string; // UI theme color
 }
 
+export interface ExplanationStep {
+  stepNumber: number;
+  text: string;
+  visualDescription: string;
+}
+
 export interface AgentResponse {
   agentId: AgentRole;
-  text: string; // Main answer
+  text: string; // Main answer or summary
+  steps?: ExplanationStep[]; // Stepwise explanation
   imageUrl?: string; // Generated illustration
   audioUrl?: string; // Generated speech
   isThinking?: boolean;

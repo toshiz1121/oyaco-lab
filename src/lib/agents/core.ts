@@ -1,5 +1,5 @@
 import { callGeminiApi } from '../gemini';
-import { AgentRole } from './types';
+import { AgentRole, ExplanationStep } from './types';
 import { agents } from './definitions';
 
 const MODEL_NAME_TEXT = "gemini-3-pro-preview";
@@ -62,7 +62,7 @@ export async function generateExpertResponse(
   question: string,
   history: { role: string, content: string }[] = [],
   style: ExplanationStyle = 'default'
-): Promise<string> {
+): Promise<{ text: string, steps: ExplanationStep[] }> {
   const agent = agents[agentId];
   
   let styleInstruction = "難しすぎる言葉は使わず、比喩や具体例を使って分かりやすく説明してください。";
@@ -84,7 +84,24 @@ export async function generateExpertResponse(
     以下の質問に、あなたのペルソナ（口調・性格）で答えてください。
     対象は小学生（低学年～中学年）です。
     ${styleInstruction}
-    150文字〜200文字程度で、子どもが飽きない長さにまとめてください。
+
+    【重要】回答は必ず以下のJSON形式で出力してください。Markdownのコードブロックは含めないでください。
+    回答の複雑さに応じて、ステップ数を1, 2, または4つに分けてください。
+    - 簡単な回答: 1ステップ
+    - 中くらいの回答: 2ステップ
+    - 複雑な回答: 4ステップ
+
+    JSON形式:
+    {
+      "text": "回答全体の要約（50文字〜100文字程度）",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "text": "このステップの説明文（子供に語りかける口調で）",
+          "visualDescription": "このステップの挿絵を描くための画像生成プロンプト（英語）"
+        }
+      ]
+    }
     
     ${historyText}
     
@@ -94,16 +111,66 @@ export async function generateExpertResponse(
   try {
     const data = await callGeminiApi(MODEL_NAME_TEXT, {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7 }
+        generationConfig: { temperature: 0.7, responseMimeType: "application/json" }
       });
       
-    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "ごめんね、ちょっとよくわからなかったよ。";
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!content) throw new Error("No content generated");
+
+    // Clean up potential markdown code blocks if the model ignores responseMimeType (backup)
+    const jsonString = content.replace(/^```json\n|\n```$/g, '').replace(/^```\n|\n```$/g, '');
+    const parsed = JSON.parse(jsonString);
+
+    return {
+        text: parsed.text || "ごめんね、ちょっとよくわからなかったよ。",
+        steps: parsed.steps || []
+    };
+
   } catch (error) {
     console.error("Expert response failed:", error);
-    return "申し訳ありません、通信のエラーで答えられませんでした。";
+    return {
+        text: "申し訳ありません、通信のエラーで答えられませんでした。",
+        steps: []
+    };
   }
 }
 
+/**
+ * Stepsから1枚の画像（パネルレイアウト）を生成するためのプロンプトを作成する
+ */
+export function generateCombinedImagePrompt(steps: ExplanationStep[]): string {
+    if (!steps || steps.length === 0) return "Children's book illustration";
+ 
+    const count = steps.length;
+    const baseStyle = 'The style should be "children\'s book illustration, colorful, warm, simple, clean lines". If any text is included in the image, it MUST be in Japanese.';
+ 
+    if (count === 1) {
+        return `
+          Create an illustration for a children's book.
+          ${baseStyle}
+          Description: ${steps[0].visualDescription}
+        `.trim();
+    } else if (count === 2) {
+        return `
+          Create a split-screen image divided vertically into 2 equal panels (Left and Right).
+          ${baseStyle}
+          Panel 1 (Left): ${steps[0].visualDescription}
+          Panel 2 (Right): ${steps[1].visualDescription}
+        `.trim();
+    } else {
+        // Default to 4 panels (2x2 grid)
+        return `
+          Create a comic strip style image divided into 4 equal panels (2x2 grid).
+          ${baseStyle}
+          Panel 1 (Top-Left): ${steps[0]?.visualDescription || ''}
+          Panel 2 (Top-Right): ${steps[1]?.visualDescription || ''}
+          Panel 3 (Bottom-Left): ${steps[2]?.visualDescription || ''}
+          Panel 4 (Bottom-Right): ${steps[3]?.visualDescription || ''}
+        `.trim();
+    }
+ }
+
+// DEPRECATED: Kept for backward compatibility or direct calls if needed
 export async function generateIllustrationPrompt(agentId: AgentRole, question: string, answer: string): Promise<string> {
     const prompt = `
       Create a prompt for an image generation AI to illustrate the following answer for a child.

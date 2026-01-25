@@ -5,7 +5,7 @@
  * LocalStorageを使用
  */
 
-import { AgentRole } from './agents/types';
+import { AgentRole, ExplanationStep } from './agents/types';
 
 export interface ChatMessage {
   id: string;
@@ -21,6 +21,9 @@ export interface ChatMessage {
   imageUrl?: string;
   audioUrl?: string;
   
+  // ステップ分割回答（オプション）
+  steps?: ExplanationStep[];
+
   // 文脈情報（説明スタイルなど）
   style?: string;
   
