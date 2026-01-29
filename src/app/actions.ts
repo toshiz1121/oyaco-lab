@@ -2,7 +2,7 @@
 
 import { decideAgent, generateExpertResponse, generateIllustrationPrompt, generateIllustration, generateCombinedImagePrompt, ExplanationStyle } from "@/lib/agents/core";
 import { AgentResponse, AgentRole } from "@/lib/agents/types";
-import { generateSpeech } from "@/lib/gemini";
+import { generateSpeech } from "@/lib/vertexai";
 
 export interface ConsultationResult {
   success: boolean;
@@ -32,10 +32,10 @@ export async function consultAction(
     // First, generate prompt
     let imagePrompt: string;
     if (responseData.steps && responseData.steps.length > 0) {
-        imagePrompt = generateCombinedImagePrompt(responseData.steps);
+      imagePrompt = generateCombinedImagePrompt(responseData.steps);
     } else {
-        // Fallback
-        imagePrompt = await generateIllustrationPrompt(agentId, question, responseData.text);
+      // Fallback
+      imagePrompt = await generateIllustrationPrompt(agentId, question, responseData.text);
     }
     console.log(`Image prompt: ${imagePrompt}`);
 
@@ -43,27 +43,27 @@ export async function consultAction(
     console.log(`[DEBUG] Step 3: Generating illustration...`);
     const imageUrl = await generateIllustration(imagePrompt);
     console.log(`[DEBUG] Illustration generated: ${imageUrl ? 'Success' : 'Failed'}`);
-    
+
     // 4. Generate Speech (Deprecated: Using Web Speech API on client side)
     // const audioUrl = await generateSpeechAction(text);
 
     const response: AgentResponse = {
-        agentId,
-        text: responseData.text,
-        steps: responseData.steps,
-        imageUrl,
-        audioUrl: undefined,
-        isThinking: false,
-        selectionReason
+      agentId,
+      text: responseData.text,
+      steps: responseData.steps,
+      imageUrl,
+      audioUrl: undefined,
+      isThinking: false,
+      selectionReason
     };
 
     return { success: true, data: response };
 
   } catch (error) {
     console.error("Consultation failed:", error);
-    return { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Consultation failed" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Consultation failed"
     };
   }
 }
@@ -74,16 +74,16 @@ export async function consultAction(
  * @returns Base64エンコードされた音声データ
  */
 export async function generateSpeechAction(text: string): Promise<string | null> {
-    try {
-        console.log(`generateSpeechAction called for text length: ${text.length}`);
-        // デフォルトのボイス（charon - おっさん風）を使用
-        const base64Audio = await generateSpeech(text);
-        return base64Audio;
-    } catch (error: any) {
-        console.error("Failed to generate speech in Server Action:", error);
-        // エラー内容を呼び出し元に伝えるため、エラーを再スローするか
-        // あるいは null を返してクライアント側で汎用エラーを出す。
-        // ここではログを詳細に残し、例外をスローしてフロントエンドに通知する
-        throw new Error(`TTS Server Error: ${error.message}`);
-    }
+  try {
+    console.log(`generateSpeechAction called for text length: ${text.length}`);
+    // デフォルトのボイス（charon - おっさん風）を使用
+    const base64Audio = await generateSpeech(text);
+    return base64Audio;
+  } catch (error: any) {
+    console.error("Failed to generate speech in Server Action:", error);
+    // Vertex AI TTS が利用できない場合は null を返す
+    // クライアント側で Web Speech API にフォールバックする
+    console.warn("Vertex AI TTS unavailable. Client will use Web Speech API fallback.");
+    return null;
+  }
 }

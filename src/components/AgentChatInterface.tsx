@@ -198,7 +198,7 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
   if (viewMode === 'result' && latestResponse) {
     const agent = agents[latestResponse.agentId] || agents.scientist;
     return (
-        <div className="h-[1000px] w-full max-w-6xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-slate-900/5" >
+        <div className="min-h-[600px] h-[90vh] md:h-[1000px] w-full max-w-7xl mx-auto bg-white/95 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border-4 md:border-6 border-slate-900/10" >
              <ResultView
                 response={latestResponse}
                 agent={agent}
@@ -215,7 +215,7 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
   const defaultAgent = agents.scientist;
 
   return (
-    <div className="h-[600px] md:h-[1000px] w-full max-w-6xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-slate-900/5">
+    <div className="min-h-[600px] h-[90vh] md:h-[1000px] w-full max-w-7xl mx-auto bg-white/95 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border-4 md:border-6 border-slate-900/10">
       <InputView
          onStartListening={handleMicToggle}
          isListening={isListening}

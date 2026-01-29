@@ -19,7 +19,7 @@ interface TextToSpeechHook {
 export function useTextToSpeech(): TextToSpeechHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
-  const [isSupported, setIsSupported] = useState(true); // Gemini TTS is handled server-side, so assume supported
+  const [isSupported, setIsSupported] = useState(true); // Vertex AI TTS is handled server-side, so assume supported
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -34,20 +34,67 @@ export function useTextToSpeech(): TextToSpeechHook {
 
   const loadAudio = useCallback(async (text: string): Promise<LoadedAudio> => {
     setIsPreparing(true);
-    
+
     try {
       console.log("Loading audio for text:", text.slice(0, 50) + "...");
       const base64Audio = await generateSpeechAction(text);
-      
+
       if (!base64Audio) {
-        throw new Error("Failed to get audio data from Gemini TTS");
+        // Fallback to Web Speech API if Vertex AI TTS is unavailable
+        console.warn("Vertex AI TTS returned null in loadAudio, using Web Speech API fallback");
+        setIsPreparing(false);
+
+        // For Web Speech API, we create a mock audio object that implements
+        // the necessary event handlers to maintain compatibility
+        const mockAudio = {
+          onended: null as ((this: HTMLAudioElement, ev: Event) => any) | null,
+          onerror: null as ((this: HTMLAudioElement, ev: Event) => any) | null,
+        } as HTMLAudioElement;
+
+        // For Web Speech API, we can't preload, so we return a mock LoadedAudio
+        // that will use speechSynthesis when play() is called
+        return {
+          audio: mockAudio,
+          duration: 0, // Unknown duration for Web Speech API
+          play: async () => {
+            if ('speechSynthesis' in window) {
+              const utterance = new SpeechSynthesisUtterance(text);
+              utterance.lang = 'ja-JP';
+              utterance.rate = 0.9;
+              utterance.pitch = 1.0;
+
+              setIsSpeaking(true);
+
+              utterance.onend = () => {
+                setIsSpeaking(false);
+                // Call the mock audio's onended handler if set
+                if (mockAudio.onended) {
+                  mockAudio.onended.call(mockAudio, new Event('ended'));
+                }
+              };
+
+              utterance.onerror = (e) => {
+                console.error("Web Speech API error:", e);
+                setIsSpeaking(false);
+                // Call the mock audio's onerror handler if set
+                if (mockAudio.onerror) {
+                  mockAudio.onerror.call(mockAudio, new Event('error'));
+                }
+              };
+
+              window.speechSynthesis.speak(utterance);
+            } else {
+              throw new Error("Neither Vertex AI TTS nor Web Speech API is available");
+            }
+          }
+        };
       }
 
-      // Gemini typically returns WAV data.
+      // Vertex AI TTS returns WAV data.
       // We create a data URI to play it.
       const audioUrl = `data:audio/wav;base64,${base64Audio}`;
       const audio = new Audio(audioUrl);
-      
+
       // Wait for metadata to load to get duration
       await new Promise<void>((resolve, reject) => {
         audio.onloadedmetadata = () => resolve();
@@ -82,44 +129,68 @@ export function useTextToSpeech(): TextToSpeechHook {
   const speak = useCallback(async (text: string, onEnd?: () => void) => {
     // Stop existing audio if any
     if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+      audioRef.current.pause();
+      audioRef.current = null;
     }
 
     setIsSpeaking(true);
 
     try {
-        console.log("Calling Gemini TTS for text:", text.slice(0, 50) + "...");
-        const base64Audio = await generateSpeechAction(text);
-        
-        if (!base64Audio) {
-            throw new Error("Failed to get audio data from Gemini TTS");
+      console.log("Calling Vertex AI TTS for text:", text.slice(0, 50) + "...");
+      const base64Audio = await generateSpeechAction(text);
+
+      if (!base64Audio) {
+        // Fallback to Web Speech API if Vertex AI TTS is unavailable
+        console.warn("Vertex AI TTS returned null, falling back to Web Speech API");
+
+        if ('speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'ja-JP'; // Japanese
+          utterance.rate = 0.9;
+          utterance.pitch = 1.0;
+
+          utterance.onend = () => {
+            setIsSpeaking(false);
+            if (onEnd) onEnd();
+          };
+
+          utterance.onerror = (e) => {
+            console.error("Web Speech API error:", e);
+            setIsSpeaking(false);
+            if (onEnd) onEnd();
+          };
+
+          window.speechSynthesis.speak(utterance);
+          return;
+        } else {
+          throw new Error("Neither Vertex AI TTS nor Web Speech API is available");
         }
+      }
 
-        // Gemini typically returns WAV data.
-        // We create a data URI to play it.
-        const audioUrl = `data:audio/wav;base64,${base64Audio}`;
-        const audio = new Audio(audioUrl);
-        audioRef.current = audio;
+      // Vertex AI TTS returns WAV data.
+      // We create a data URI to play it.
+      const audioUrl = `data:audio/wav;base64,${base64Audio}`;
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
 
-        audio.onended = () => {
-            setIsSpeaking(false);
-            audioRef.current = null;
-            if (onEnd) onEnd();
-        };
-
-        audio.onerror = (e) => {
-            console.error("Audio playback error:", e);
-            setIsSpeaking(false);
-            audioRef.current = null;
-            if (onEnd) onEnd();
-        };
-
-        await audio.play();
-    } catch (err) {
-        console.error("TTS Error:", err);
+      audio.onended = () => {
         setIsSpeaking(false);
+        audioRef.current = null;
         if (onEnd) onEnd();
+      };
+
+      audio.onerror = (e) => {
+        console.error("Audio playback error:", e);
+        setIsSpeaking(false);
+        audioRef.current = null;
+        if (onEnd) onEnd();
+      };
+
+      await audio.play();
+    } catch (err) {
+      console.error("TTS Error:", err);
+      setIsSpeaking(false);
+      if (onEnd) onEnd();
     }
   }, []);
 

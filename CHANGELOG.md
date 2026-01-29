@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-01-28
+
+### Changed
+- **BREAKING**: Gemini APIからVertex AIへ完全に移行しました。
+- `src/lib/gemini.ts` を `src/lib/vertexai.ts` にリネームし、アーキテクチャを刷新しました。
+- 環境変数 `GEMINI_API_KEY` を廃止し、Google Cloud標準の認証方式に変更しました。
+- `gemini-3-pro-preview` 等の古いモデルから `gemini-2.5-flash` シリーズに一新しました。
+
+### Added
+- Vertex AI専用のカスタムエラー型 `VertexAIError` を導入し、エラーハンドリングを強化しました。
+- 指数バックオフとジッターを用いたリトライロジックを実装し、APIの耐障害性を向上させました。
+- 設定の一元管理（`VERTEX_AI_CONFIG`）により、モデルやリージョンの変更を容易にしました。
+- 包括的なJSDocコメントと実装背景の記述を追加し、保守性を向上させました。
+
+### Removed
+- `@google/generative-ai` パッケージへの依存を削除しました。
+- 未使用のレガシーなGemini API参照をすべて削除しました。
+
+
 ### Phase 12: UI/UX改善（計画中）
 
 **次のステップ**:
