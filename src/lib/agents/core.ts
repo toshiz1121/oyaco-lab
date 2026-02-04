@@ -13,7 +13,7 @@
  */
 
 import { callVertexAI, VERTEX_AI_CONFIG } from '../vertexai';
-import { AgentRole, ExplanationStep } from './types';
+import { AgentRole, ExplanationStep, SentenceImagePair, PairStatus } from './types';
 import { agents } from './definitions';
 
 /**
@@ -208,6 +208,29 @@ export async function generateExpertResponse(
       steps: []
     };
   }
+}
+
+/**
+ * LLMレスポンスからSentenceImagePair配列を生成する
+ * 
+ * 実装背景:
+ * - 並列文章-画像生成フローのためのヘルパー関数
+ * - ExplanationStepからSentenceImagePairへの変換を担当
+ * - 一意のID生成とstepNumber割り当てを自動化
+ * 
+ * @param steps LLMから生成された説明ステップの配列
+ * @returns SentenceImagePairの配列（初期状態はすべてpending）
+ */
+export function createSentenceImagePairs(steps: ExplanationStep[]): SentenceImagePair[] {
+  return steps.map((step, index) => ({
+    id: `pair-${index + 1}`,
+    stepNumber: index + 1,
+    text: step.text,
+    visualDescription: step.visualDescription,
+    imageUrl: null,
+    audioData: null,
+    status: 'pending' as PairStatus,
+  }));
 }
 
 /**

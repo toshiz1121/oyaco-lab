@@ -129,7 +129,9 @@ export function AgentChatInterface({ initialQuestion, onNewSession }: AgentChatI
                 content: result.data.text,
                 agentId: result.data.agentId,
                 steps: result.data.steps,
-                imageUrl: result.data.imageUrl
+                imageUrl: result.data.imageUrl,
+                pairs: result.data.pairs,
+                useParallelGeneration: result.data.useParallelGeneration
             });
 
             setLatestResponse(result.data);
