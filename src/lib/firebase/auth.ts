@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, updateDoc, Timestamp } from "firebase/firestore";
-import { db } from './config';
+import { getFirebaseDb } from './config';
 
 export interface ParentUser {
     userId: string;
@@ -14,7 +14,7 @@ export interface ParentUser {
 
 // 親ユーザーを取得する
 export async function getParentUser(userId: string): Promise<ParentUser | null> {
-    
+    const db = getFirebaseDb();
     const docRef = doc(db, 'users', userId);
     const docSnap = await getDoc(docRef);
 
@@ -27,7 +27,7 @@ export async function getParentUser(userId: string): Promise<ParentUser | null> 
 
 // 親ユーザーを作成
 export async function createParentUser(data: {userId: string; email: string; displayName: string; photoURL?: string;}): Promise<ParentUser> {
-
+    const db = getFirebaseDb();
     // 親ユーザーのデータを整理
     const parentUser: ParentUser = {
         ...data,
@@ -44,6 +44,7 @@ export async function createParentUser(data: {userId: string; email: string; dis
 
 // 最終ログイン時刻を更新
 export async function updateLastLogin(userId: string): Promise<void> {
+  const db = getFirebaseDb();
   const docRef = doc(db, 'users', userId);
   await updateDoc(docRef, {
     lastLoginAt: Timestamp.now(),
@@ -52,7 +53,7 @@ export async function updateLastLogin(userId: string): Promise<void> {
 
 // アクティブな子供を更新
 export async function updateActiveChild(userId: string, childId: string) {
-
+    const db = getFirebaseDb();
     const docRef = doc(db, 'users', userId);
     await updateDoc(docRef, {
         activeChildId: childId,
@@ -68,6 +69,7 @@ export async function addChildToParent(
   parentUserId: string,
   childId: string
 ): Promise<void> {
+  const db = getFirebaseDb();
   const userRef = doc(db, 'users', parentUserId);
   const userSnap = await getDoc(userRef);
 
