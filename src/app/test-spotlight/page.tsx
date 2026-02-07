@@ -18,6 +18,7 @@ export default function TestSpotlightPage() {
     historian: "「なんで恐竜はいなくなったの？」は歴史についてのしつもんだから、れきしはかせがいちばんくわしいよ！",
     artist: "「なんで絵を描くと楽しいの？」は芸術についてのしつもんだから、げいじゅつはかせがいちばんくわしいよ！",
     educator: "「なんで勉強するの？」は学びについてのしつもんだから、きょういくはかせがいちばんくわしいよ！",
+    orchestrator: "みんなのはかせをまとめて、いちばんいいこたえをみつけるよ！",
   };
 
   const handleSelectExpert = (expert: AgentRole) => {
