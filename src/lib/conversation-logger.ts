@@ -47,8 +47,12 @@ export async function logConversation(params: LogConversationParams): Promise<st
 
   try {
     console.log(`[ConversationLogger] Starting to log conversation: ${conversationId}`);
+    console.log(`[ConversationLogger] childId: ${childId}`);
+    console.log(`[ConversationLogger] question: ${question.substring(0, 50)}...`);
+    console.log(`[ConversationLogger] selectedExpert: ${selectedExpert}`);
 
     // 1. 会話メタデータを作成
+    console.log('[ConversationLogger] Step 1: Creating conversation metadata...');
     await createConversation(
       childId,
       conversationId,
@@ -57,9 +61,11 @@ export async function logConversation(params: LogConversationParams): Promise<st
       selectedExpert,
       selectionReason
     );
+    console.log('[ConversationLogger] Step 1: Conversation metadata created successfully');
 
     // 2. シーンを一括保存
     if (response.pairs && response.pairs.length > 0) {
+      console.log(`[ConversationLogger] Step 2: Saving ${response.pairs.length} scenes...`);
       const scenes: Omit<ConversationScene, 'createdAt'>[] = response.pairs.map(
         (pair, index) => {
           // 画像ヒントを生成（プロンプトの最初の50文字）
@@ -98,10 +104,13 @@ export async function logConversation(params: LogConversationParams): Promise<st
       );
 
       await addScenesBatch(childId, conversationId, scenes);
-      console.log(`[ConversationLogger] Saved ${scenes.length} scenes`);
+      console.log(`[ConversationLogger] Step 2: Saved ${scenes.length} scenes successfully`);
+    } else {
+      console.log('[ConversationLogger] Step 2: No scenes to save');
     }
 
     // 3. 会話を完了状態に更新
+    console.log('[ConversationLogger] Step 3: Completing conversation...');
     const duration = Math.floor((Date.now() - startTime) / 1000); // 秒単位
     await completeConversation(
       childId,
@@ -109,12 +118,17 @@ export async function logConversation(params: LogConversationParams): Promise<st
       response.pairs?.length || 0,
       duration
     );
+    console.log('[ConversationLogger] Step 3: Conversation completed successfully');
 
-    console.log(`[ConversationLogger] Successfully logged conversation: ${conversationId}`);
+    console.log(`[ConversationLogger] ✅ Successfully logged conversation: ${conversationId}`);
     return conversationId;
 
   } catch (error) {
-    console.error('[ConversationLogger] Failed to log conversation:', error);
+    console.error('[ConversationLogger] ❌ Failed to log conversation:', error);
+    if (error instanceof Error) {
+      console.error('[ConversationLogger] Error message:', error.message);
+      console.error('[ConversationLogger] Error stack:', error.stack);
+    }
     throw error;
   }
 }

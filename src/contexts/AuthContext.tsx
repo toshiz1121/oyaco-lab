@@ -37,6 +37,7 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
     // 認証状態の監視
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async(firebaseUser) => {
+            console.log('[AuthContext] Auth state changed:', firebaseUser ? `User: ${firebaseUser.uid}` : 'No user');
             setUser(firebaseUser);
             if(firebaseUser) {
                 setParentUserId(firebaseUser.uid);
@@ -45,8 +46,15 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
                 const parentUser = await getParentUser(firebaseUser.uid);
 
                 if(parentUser) {
+                    console.log('[AuthContext] Parent user loaded:', {
+                        userId: parentUser.userId,
+                        children: parentUser.children,
+                        activeChildId: parentUser.activeChildId
+                    });
                     setChildrenIds(parentUser.children);
                     setActiveChildId(parentUser.activeChildId || null);
+                } else {
+                    console.warn('[AuthContext] Parent user not found in Firestore');
                 }
             } else {
                 setParentUserId(null);

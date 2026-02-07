@@ -275,7 +275,15 @@ export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProp
       // Firestoreに会話ログを保存
       // 子供に紐付けて会話ログを保存するため
       if(activeChildId) {
-        logCurrentConversation(question, newExpert, newSelectionReason, responseData);
+        console.log('[useAgentChat] 会話ログを保存中...', { activeChildId, question: question.substring(0, 30) });
+        try {
+          await logCurrentConversation(question, newExpert, newSelectionReason, responseData);
+          console.log('[useAgentChat] 会話ログの保存に成功しました');
+        } catch (error) {
+          console.error('[useAgentChat] 会話ログの保存に失敗しました:', error);
+        }
+      } else {
+        console.warn('[useAgentChat] activeChildIdが設定されていないため、会話ログを保存できません');
       }
 
     } catch (e) {

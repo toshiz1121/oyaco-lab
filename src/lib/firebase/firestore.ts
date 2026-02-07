@@ -105,6 +105,8 @@ export async function createConversation(
   selectedExpert: string,
   selectionReason?: string
 ): Promise<ConversationMetadata> {
+  console.log('[Firestore] createConversation called', { childId, conversationId });
+  
   const db = getFirebaseDb();
   const metadata: ConversationMetadata = {
     conversationId,
@@ -126,10 +128,17 @@ export async function createConversation(
     'conversations',
     conversationId
   );
-  await setDoc(conversationRef, metadata);
   
-  console.log(`[Firestore] Created conversation: ${conversationId}`);
-  return metadata;
+  console.log('[Firestore] Writing to path:', conversationRef.path);
+  
+  try {
+    await setDoc(conversationRef, metadata);
+    console.log(`[Firestore] ✅ Created conversation: ${conversationId}`);
+    return metadata;
+  } catch (error) {
+    console.error('[Firestore] ❌ Failed to create conversation:', error);
+    throw error;
+  }
 }
 
 /**
@@ -141,6 +150,8 @@ export async function completeConversation(
   totalScenes: number,
   duration?: number
 ): Promise<void> {
+  console.log('[Firestore] completeConversation called', { childId, conversationId, totalScenes });
+  
   const db = getFirebaseDb();
   const conversationRef = doc(
     db,
@@ -150,33 +161,42 @@ export async function completeConversation(
     conversationId
   );
 
-  await updateDoc(conversationRef, {
-    status: 'completed',
-    completedAt: Timestamp.now(),
-    totalScenes,
-    duration,
-  });
-
-  // 子供の統計情報を更新
-  const childRef = doc(db, 'children', childId);
-  const childSnap = await getDoc(childRef);
-  
-  if (childSnap.exists()) {
-    const currentStats = childSnap.data().stats;
-    const newTotalConversations = currentStats.totalConversations + 1;
-    const newTotalScenes = currentStats.totalScenes + totalScenes;
-    
-    await updateDoc(childRef, {
-      'stats.totalConversations': newTotalConversations,
-      'stats.totalQuestions': currentStats.totalQuestions + 1,
-      'stats.totalScenes': newTotalScenes,
-      'stats.lastActivityAt': Timestamp.now(),
-      'stats.averageScenesPerConversation': Math.round(newTotalScenes / newTotalConversations),
-      updatedAt: Timestamp.now(),
+  try {
+    await updateDoc(conversationRef, {
+      status: 'completed',
+      completedAt: Timestamp.now(),
+      totalScenes,
+      duration,
     });
-  }
+    console.log('[Firestore] ✅ Conversation marked as completed');
 
-  console.log(`[Firestore] Completed conversation: ${conversationId}`);
+    // 子供の統計情報を更新
+    const childRef = doc(db, 'children', childId);
+    const childSnap = await getDoc(childRef);
+    
+    if (childSnap.exists()) {
+      const currentStats = childSnap.data().stats;
+      const newTotalConversations = currentStats.totalConversations + 1;
+      const newTotalScenes = currentStats.totalScenes + totalScenes;
+      
+      await updateDoc(childRef, {
+        'stats.totalConversations': newTotalConversations,
+        'stats.totalQuestions': currentStats.totalQuestions + 1,
+        'stats.totalScenes': newTotalScenes,
+        'stats.lastActivityAt': Timestamp.now(),
+        'stats.averageScenesPerConversation': Math.round(newTotalScenes / newTotalConversations),
+        updatedAt: Timestamp.now(),
+      });
+      console.log('[Firestore] ✅ Child stats updated');
+    } else {
+      console.warn('[Firestore] ⚠️ Child profile not found, skipping stats update');
+    }
+
+    console.log(`[Firestore] ✅ Completed conversation: ${conversationId}`);
+  } catch (error) {
+    console.error('[Firestore] ❌ Failed to complete conversation:', error);
+    throw error;
+  }
 }
 
 /**
@@ -255,6 +275,8 @@ export async function addScenesBatch(
   conversationId: string,
   scenes: Omit<ConversationScene, 'createdAt'>[]
 ): Promise<void> {
+  console.log('[Firestore] addScenesBatch called', { childId, conversationId, sceneCount: scenes.length });
+  
   const db = getFirebaseDb();
   const batch = writeBatch(db);
 
@@ -277,8 +299,13 @@ export async function addScenesBatch(
     batch.set(sceneRef, sceneData);
   });
 
-  await batch.commit();
-  console.log(`[Firestore] Added ${scenes.length} scenes in batch`);
+  try {
+    await batch.commit();
+    console.log(`[Firestore] ✅ Added ${scenes.length} scenes in batch`);
+  } catch (error) {
+    console.error('[Firestore] ❌ Failed to add scenes batch:', error);
+    throw error;
+  }
 }
 
 /**
