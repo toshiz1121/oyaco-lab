@@ -5,7 +5,7 @@
  * LocalStorageを使用
  */
 
-import { AgentRole, ExplanationStep } from './agents/types';
+import { AgentRole, ExplanationStep, SentenceImagePair } from './agents/types';
 
 export interface ChatMessage {
   id: string;
@@ -23,6 +23,10 @@ export interface ChatMessage {
   
   // ステップ分割回答（オプション）
   steps?: ExplanationStep[];
+  
+  // 新フロー用: 文章画像ペア
+  pairs?: SentenceImagePair[];
+  useParallelGeneration?: boolean;
 
   // 文脈情報（説明スタイルなど）
   style?: string;
@@ -79,6 +83,9 @@ export function getAllSessions(): ChatSession[] {
 
 /**
  * セッションを保存
+ * 
+ * LocalStorageの容量制限（約5MB）を超えた場合は、
+ * 段階的にデータを圧縮して保存を試みる
  */
 function saveSessions(sessions: ChatSession[]): void {
   if (!isLocalStorageAvailable()) return;
@@ -99,25 +106,76 @@ function saveSessions(sessions: ChatSession[]): void {
             console.log('History saved with reduced session count.');
             return;
         } catch (retryError) {
-            // 戦略2: 画像データを削除して保存 (テキストのみ保存)
+            // 戦略2: 画像・音声データを削除して保存 (テキストのみ保存)
             try {
-                const noImageSessions = sessions.slice(0, 10).map(s => ({
+                const compressedSessions = sessions.slice(0, 10).map(s => ({
                     ...s,
                     messages: s.messages.map(m => {
+                        // メッセージから大きなデータを削除
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        const { imageUrl, ...rest } = m;
+                        const { imageUrl, audioUrl, ...rest } = m;
+                        
+                        // pairs内の画像・音声データも削除
+                        if (rest.pairs) {
+                            rest.pairs = rest.pairs.map(p => ({
+                                ...p,
+                                imageUrl: null,  // 画像データを削除
+                                audioData: null  // 音声データを削除
+                            }));
+                        }
+                        
+                        // steps内のvisualDescriptionは残す（テキストなので小さい）
                         return rest;
                     })
                 }));
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(noImageSessions));
-                console.log('History saved without images due to size limits.');
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(compressedSessions));
+                console.log('History saved without images/audio due to size limits.');
                 return;
-            } catch (finalError) {
-                console.error('Critical: Failed to save history even after compression.', finalError);
+            } catch (secondRetryError) {
+                // 戦略3: 最新3件のみ、テキストだけ保存
+                try {
+                    const minimalSessions = sessions.slice(0, 3).map(s => ({
+                        ...s,
+                        messages: s.messages.map(m => ({
+                            id: m.id,
+                            role: m.role,
+                            content: m.content,
+                            timestamp: m.timestamp,
+                            agentId: m.agentId
+                        }))
+                    }));
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(minimalSessions));
+                    console.log('History saved with minimal data (text only).');
+                    return;
+                } catch (finalError) {
+                    // 戦略4: 履歴をクリアして新規保存
+                    console.error('Critical: All recovery attempts failed. Clearing old history.');
+                    localStorage.removeItem(STORAGE_KEY);
+                    
+                    // 最新のセッションのみ保存を試みる
+                    if (sessions.length > 0) {
+                        const latestOnly = [{
+                            ...sessions[0],
+                            messages: sessions[0].messages.slice(-5).map(m => ({
+                                id: m.id,
+                                role: m.role,
+                                content: m.content,
+                                timestamp: m.timestamp,
+                                agentId: m.agentId
+                            }))
+                        }];
+                        try {
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(latestOnly));
+                        } catch (e) {
+                            console.error('Failed to save even minimal history:', e);
+                        }
+                    }
+                }
             }
         }
+    } else {
+        console.error('Failed to save chat history:', error);
     }
-    console.error('Failed to save chat history:', error);
   }
 }
 
@@ -144,6 +202,9 @@ export function createSession(initialQuestion: string): ChatSession {
 
 /**
  * メッセージを追加
+ * 
+ * 注意: 画像・音声データ（Base64）は容量が大きいため、
+ * LocalStorageには保存しない。必要な場合はIndexedDBを使用する。
  */
 export function addMessageToSession(sessionId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>): ChatSession | null {
   const sessions = getAllSessions();
@@ -151,8 +212,23 @@ export function addMessageToSession(sessionId: string, message: Omit<ChatMessage
   
   if (sessionIndex === -1) return null;
   
+  // 大きなデータを除外してメッセージを作成
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { imageUrl, audioUrl, ...messageWithoutLargeData } = message;
+  
+  // pairs内の画像・音声データも除外
+  let cleanedPairs = messageWithoutLargeData.pairs;
+  if (cleanedPairs) {
+    cleanedPairs = cleanedPairs.map(p => ({
+      ...p,
+      imageUrl: null,  // 画像データを保存しない
+      audioData: null  // 音声データを保存しない
+    }));
+  }
+  
   const newMessage: ChatMessage = {
-    ...message,
+    ...messageWithoutLargeData,
+    pairs: cleanedPairs,
     id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     timestamp: Date.now()
   };

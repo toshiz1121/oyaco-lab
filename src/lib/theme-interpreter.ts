@@ -1,7 +1,19 @@
-import { callGeminiApi } from "./gemini";
+/**
+ * テーマ解釈モジュール
+ * 
+ * 実装背景:
+ * - ユーザーの入力（お題）をAIが分析し、画像生成に適した構造化データに変換
+ * - 描画すべき具体的な「要素」と「ムード」を抽出することで、画像品質を向上
+ */
+
+import { callVertexAI, VERTEX_AI_CONFIG } from "./vertexai";
 import { Artist } from "./artists";
 
-const MODEL_NAME_TEXT = "gemini-2.5-flash";
+/**
+ * テーマ解釈に使用するモデル名
+ * 実装背景: Vertex AI設定から取得することで、一元管理を実現
+ */
+const MODEL_NAME_TEXT = VERTEX_AI_CONFIG.models.text;
 
 /**
  * ユーザー入力から描画要素とムードを抽出
@@ -50,9 +62,9 @@ Output: {
 `.trim();
 
     const requestBody = {
-      contents: [{ 
-        role: "user", 
-        parts: [{ text: prompt }] 
+      contents: [{
+        role: "user",
+        parts: [{ text: prompt }]
       }],
       generationConfig: {
         temperature: 0.3,  // 安定した解釈のため低めに設定
@@ -61,11 +73,11 @@ Output: {
       }
     };
 
-    const data = await callGeminiApi(MODEL_NAME_TEXT, requestBody);
-    
+    const data = await callVertexAI(MODEL_NAME_TEXT, requestBody);
+
     const candidate = data.candidates?.[0];
     const textPart = candidate?.content?.parts?.[0]?.text;
-    
+
     if (!textPart) {
       throw new Error("No interpretation result from LLM");
     }
@@ -77,7 +89,7 @@ Output: {
     }
 
     const interpretation: ThemeInterpretation = JSON.parse(jsonMatch[0]);
-    
+
     // バリデーション
     if (!interpretation.elements || !interpretation.mood) {
       throw new Error("Incomplete interpretation result");
@@ -88,7 +100,7 @@ Output: {
 
   } catch (error) {
     console.error("Failed to interpret theme:", error);
-    
+
     // フォールバック: お題をそのまま使用
     return {
       elements: theme,

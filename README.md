@@ -25,16 +25,17 @@ Orchestrator-Workers パターンを採用したAIエージェント群が、子
 - **Animation**: [Framer Motion](https://www.framer.com/motion/)
 
 ### AI / Backend Services
-- **Orchestration & Text Gen**: Google Gemini Pro (`gemini-3-pro-preview`)
-- **Image Generation**: Google Gemini Pro Vision / Imagen (`gemini-3-pro-image-preview`)
-- **Speech Synthesis**: Web Speech API / External TTS API (OpenAI compatible)
+- **Orchestration & Text Gen**: Google Cloud Vertex AI (`gemini-2.5-flash`)
+- **Image Generation**: Google Cloud Vertex AI (`gemini-2.5-flash-image`)
+- **Speech Synthesis**: Google Cloud Vertex AI TTS (`gemini-2.5-flash-tts`) / Web Speech API Fallback
 
 ## 🚀 セットアップ
 
 ### 前提条件
 
 - Node.js 18.x 以上 (推奨: 20.x LTS)
-- Gemini API Key
+- Google Cloud Project with Vertex AI enabled
+- Google Cloud Authentication (Service Account Key or Application Default Credentials)
 
 ### インストール手順
 
@@ -57,9 +58,12 @@ Orchestrator-Workers パターンを採用したAIエージェント群が、子
 
    **`.env.local` の設定例:**
    ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
-   # TTSなどでOpenAI互換APIを使用する場合
-   # OPENAI_API_BASE_URL=https://api.openai.com/v1
+   # Vertex AI Project & Location
+   VERTEX_AI_PROJECT=your-project-id
+   VERTEX_AI_LOCATION=asia-northeast1
+
+   # Google Cloud Authentication
+   GOOGLE_APPLICATION_CREDENTIALS=/path/to/your-service-account-key.json
    ```
 
 ### 開発サーバーの起動
@@ -87,7 +91,7 @@ src/
 │   │   ├── definitions.ts # Agent Personas
 │   │   └── types.ts      # Type Definitions
 │   ├── chat-history.ts   # History Management (LocalStorage)
-│   └── gemini.ts         # Gemini API Client
+│   └── vertexai.ts       # Vertex AI API Client
 ├── hooks/                # Custom React Hooks
 └── docs/                 # Documentation
     ├── architecture.md   # Architecture Design

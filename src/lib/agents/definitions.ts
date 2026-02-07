@@ -14,7 +14,7 @@ export const agents: Record<AgentRole, Agent> = {
     id: 'scientist',
     name: 'Dr. Quark',
     nameJa: 'クオーク博士',
-    avatar: '/avatars/scientist.png',
+    avatar: '/avatars/professor.png',
     persona: `あなたは「クオーク博士」です。物理や化学の現象について、子どもたちに優しく教える科学者です。
     口調: 「～なんじゃよ」「～だね」といった、少し年配だが親しみやすい口調。
     特徴: 「実験」や「仕組み」に興味があります。魔法ではなく科学で説明します。`,
