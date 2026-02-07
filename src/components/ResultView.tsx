@@ -132,13 +132,13 @@ function ParallelResultView({ response, agent, onStartListening, isListening, qu
       console.log(`[DEBUG] Created audio from pair.audioData for ${pair.id}`);
     }
 
-    // 音声データがまだない場合は待機（最大10秒）
+    // 音声データがまだない場合は待機（最大30秒）
     if (!cachedAudio) {
       console.log(`[DEBUG] Audio not ready for ${pair.id}, waiting for generation...`);
       setIsSpeaking(true); // ローディング状態を表示
       
-      const maxWaitTime = 10000; // 最大10秒待機
-      const checkInterval = 200; // 200msごとにチェック
+      const maxWaitTime = 30000; // 最大30秒待機（レート制限を考慮）
+      const checkInterval = 500; // 500msごとにチェック
       let waited = 0;
       
       while (waited < maxWaitTime) {
@@ -151,11 +151,16 @@ function ParallelResultView({ response, agent, onStartListening, isListening, qu
           console.log(`[DEBUG] Audio ready for ${pair.id} after ${waited}ms`);
           break;
         }
+        
+        // 進捗をログ出力（5秒ごと）
+        if (waited % 5000 === 0) {
+          console.log(`[DEBUG] Still waiting for audio ${pair.id}... (${waited / 1000}s)`);
+        }
       }
       
       // 待機後もまだない場合はフォールバック
       if (!cachedAudio) {
-        console.warn(`[WARN] Audio generation timeout for ${pair.id}, using Web Speech API fallback`);
+        console.warn(`[WARN] Audio generation timeout for ${pair.id} after ${maxWaitTime / 1000}s, using Web Speech API fallback`);
         fallbackToWebSpeech(pair.text);
         return;
       }

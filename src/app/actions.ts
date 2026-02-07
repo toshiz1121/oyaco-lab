@@ -1,7 +1,7 @@
 "use server";
 
 import { decideAgent, generateExpertResponse, generateIllustrationPrompt, generateIllustration, generateCombinedImagePrompt, createSentenceImagePairs, ExplanationStyle } from "@/lib/agents/core";
-import { AgentResponse } from "@/lib/agents/types";
+import { AgentResponse, AgentRole } from "@/lib/agents/types";
 import { generateSpeech } from "@/lib/vertexai";
 
 // 相談結果の型定義
@@ -11,13 +11,206 @@ export interface ConsultationResult {
   error?: string;
 }
 
+// エージェント決定結果の型定義
+export interface AgentDecisionResult {
+  success: boolean;
+  agentId?: AgentRole;
+  selectionReason?: string;
+  error?: string;
+}
+
 /**
- * 子供の質問に対してAIエージェントが回答を生成するメインアクション
+ * 質問に対して最適な専門家を決定するアクション（高速）
+ * 
+ * この関数は博士の選定のみを行い、すぐに結果を返します。
+ * UIはこの結果を受け取った瞬間にスポットライト演出を開始できます。
+ * 
+ * @param question 子供からの質問文
+ * @param history 過去の会話履歴
+ * @returns 選ばれた博士のIDと選定理由
+ */
+export async function decideAgentAction(
+  question: string,
+  history: { role: string, content: string }[] = []
+): Promise<AgentDecisionResult> {
+  try {
+    console.log(`[decideAgentAction] Deciding agent for: "${question}"`);
+    
+    const { agentId, reason: selectionReason } = await decideAgent(question, history);
+    
+    console.log(`[decideAgentAction] Selected: ${agentId}, Reason: ${selectionReason}`);
+    
+    return {
+      success: true,
+      agentId,
+      selectionReason
+    };
+  } catch (error) {
+    console.error("[decideAgentAction] Failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Agent decision failed"
+    };
+  }
+}
+
+/**
+ * 選ばれた専門家が回答を生成するアクション
+ * 
+ * decideAgentActionで選ばれた博士が、実際に回答と画像を生成します。
+ * この処理は時間がかかるため、UIは画像生成中の画面を表示します。
+ * 
+ * @param agentId 選ばれた博士のID
+ * @param question 子供からの質問文
+ * @param history 過去の会話履歴
+ * @param style 説明スタイル
+ * @returns エージェントの回答データ
+ */
+export async function generateResponseAction(
+  agentId: AgentRole,
+  question: string,
+  history: { role: string, content: string }[] = [],
+  style: ExplanationStyle = 'default'
+): Promise<ConsultationResult> {
+  try {
+    console.log(`[generateResponseAction] Generating response for ${agentId}`);
+
+    // 環境変数から並列生成機能の有効/無効を判定
+    const useParallelGeneration = process.env.USE_PARALLEL_GENERATION === 'true';
+    console.log(`[DEBUG] USE_PARALLEL_GENERATION: ${useParallelGeneration}`);
+
+    if (!useParallelGeneration) {
+      // 並列生成が無効の場合は従来の逐次処理フローを使用
+      return await legacyGenerateResponse(agentId, question, history, style);
+    }
+
+    // 並列生成フロー
+    console.log(`[DEBUG] Using parallel generation flow`);
+
+    // ステップ1: 選択されたエージェントが説明文を生成
+    console.log(`[DEBUG] Step 1: Generating expert response for ${agentId}...`);
+    const responseData = await generateExpertResponse(agentId, question, history, style);
+    console.log(`[DEBUG] Generated text: ${responseData.text.slice(0, 50)}...`);
+
+    // ステップ2: 説明文を文章-画像ペアの配列に変換
+    const pairs = createSentenceImagePairs(responseData.steps || []);
+    console.log(`[DEBUG] Created ${pairs.length} sentence-image pairs`);
+
+    // ステップ3: 最初のペアの画像と音声を並列生成
+    if (pairs.length > 0) {
+      pairs[0].status = 'generating';
+      console.log(`[DEBUG] Step 2: Generating first pair image and audio in parallel...`);
+      
+      try {
+        const [imageUrl, audioData] = await Promise.all([
+          generateIllustration(pairs[0].visualDescription),
+          generateSpeech(pairs[0].text)
+        ]);
+        
+        if (imageUrl) {
+          pairs[0].imageUrl = imageUrl;
+          pairs[0].status = 'ready';
+          pairs[0].generatedAt = new Date();
+          console.log(`[DEBUG] First pair image generated successfully`);
+        } else {
+          pairs[0].status = 'error';
+          console.error(`[ERROR] First pair image generation returned null`);
+        }
+        
+        pairs[0].audioData = audioData;
+        console.log(`[DEBUG] First pair audio: ${audioData ? 'generated' : 'failed (will use fallback)'}`);
+        
+      } catch (error) {
+        console.error('[ERROR] First pair generation failed:', error);
+        pairs[0].status = 'error';
+      }
+    }
+
+    // レスポンスオブジェクトを構築
+    const response: AgentResponse = {
+      agentId,
+      text: responseData.text,
+      pairs,
+      audioUrl: undefined,
+      isThinking: false,
+      useParallelGeneration: true
+    };
+
+    return { success: true, data: response };
+
+  } catch (error) {
+    console.error("[generateResponseAction] Failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Response generation failed"
+    };
+  }
+}
+
+/**
+ * 従来の逐次生成フロー（generateResponseAction用）
+ */
+async function legacyGenerateResponse(
+  agentId: AgentRole,
+  question: string,
+  history: { role: string, content: string }[] = [],
+  style: ExplanationStyle = 'default'
+): Promise<ConsultationResult> {
+  try {
+    console.log(`[DEBUG] Using legacy sequential flow for response generation`);
+
+    // ステップ1: 選択されたエージェントが説明文を生成
+    console.log(`[DEBUG] Step 1: Generating expert response for ${agentId}...`);
+    const responseData = await generateExpertResponse(agentId, question, history, style);
+    console.log(`[DEBUG] Generated text: ${responseData.text.slice(0, 50)}...`);
+
+    // ステップ2: 画像生成用のプロンプトを作成
+    let imagePrompt: string;
+    if (responseData.steps && responseData.steps.length > 0) {
+      imagePrompt = generateCombinedImagePrompt(responseData.steps);
+    } else {
+      imagePrompt = await generateIllustrationPrompt(agentId, question, responseData.text);
+    }
+    console.log(`Image prompt: ${imagePrompt}`);
+
+    // ステップ3: 画像を生成
+    console.log(`[DEBUG] Step 2: Generating illustration...`);
+    const imageUrl = await generateIllustration(imagePrompt);
+    console.log(`[DEBUG] Illustration generated: ${imageUrl ? 'Success' : 'Failed'}`);
+
+    // レスポンスオブジェクトを構築
+    const response: AgentResponse = {
+      agentId,
+      text: responseData.text,
+      steps: responseData.steps,
+      imageUrl,
+      audioUrl: undefined,
+      isThinking: false,
+      useParallelGeneration: false
+    };
+
+    return { success: true, data: response };
+
+  } catch (error) {
+    console.error("Legacy response generation failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Response generation failed"
+    };
+  }
+}
+
+/**
+ * 子供の質問に対してAIエージェントが回答を生成するメインアクション（レガシー版）
+ * 
+ * 後方互換性のために残していますが、新しいコードでは
+ * decideAgentAction + generateResponseAction の2段階呼び出しを推奨します。
  * 
  * @param question 子供からの質問文
  * @param history 過去の会話履歴
  * @param style 説明スタイル（デフォルト、詳細など）
  * @returns 成功/失敗とエージェントの回答データ
+ * @deprecated 代わりに decideAgentAction と generateResponseAction を使用してください
  */
 export async function consultAction(
   question: string,
@@ -25,6 +218,7 @@ export async function consultAction(
   style: ExplanationStyle = 'default'
 ): Promise<ConsultationResult> {
   try {
+    console.log(`[consultAction] DEPRECATED: Use decideAgentAction + generateResponseAction instead`);
     console.log(`Consultation started for: "${question}" (Style: ${style})`);
 
     // 環境変数から並列生成機能の有効/無効を判定

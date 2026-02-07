@@ -14,6 +14,10 @@ import { generateSpeechAction } from '@/app/actions';
  * ユーザーが最初のペアを見ている間に次の音声を準備することで、
  * 待ち時間を体感させないUXを実現します。
  * 
+ * レート制限対策:
+ * - リクエスト間隔を3秒に設定（画像生成と同じ）
+ * - 画像生成と音声生成が同時に実行されないように調整
+ * 
  * @param pairs 文章画像ペアの配列
  * @param onAudioUpdate 音声データ更新時のコールバック
  */
@@ -23,6 +27,7 @@ export function useBackgroundAudioGenerator(
 ) {
   const isProcessing = useRef(false);
   const processedIds = useRef<Set<string>>(new Set());
+  const REQUEST_DELAY = 3000; // レート制限対策: 3秒間隔
   
   useEffect(() => {
     // 最初のペアの音声が生成済みかチェック
@@ -52,13 +57,15 @@ export function useBackgroundAudioGenerator(
   /**
    * 音声生成キューを処理する
    * 
+   * レート制限対策として、各リクエスト間に3秒の待機時間を設ける
+   * 
    * @param pendingPairs 音声未生成のペア配列
    */
   const processAudioQueue = async (pendingPairs: SentenceImagePair[]) => {
     if (isProcessing.current) return;
     isProcessing.current = true;
     
-    // 順次処理（音声生成は比較的軽いのでレート制限は緩め）
+    // 順次処理（レート制限対策）
     for (const pair of pendingPairs) {
       // 既に処理済みならスキップ
       if (processedIds.current.has(pair.id)) continue;
@@ -76,8 +83,8 @@ export function useBackgroundAudioGenerator(
         onAudioUpdate(pair.id, null);
       }
       
-      // 次のリクエストまで少し待機（サーバー負荷軽減）
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // 次のリクエストまで待機（レート制限対策）
+      await new Promise(resolve => setTimeout(resolve, REQUEST_DELAY));
     }
     
     isProcessing.current = false;
