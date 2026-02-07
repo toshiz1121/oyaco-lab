@@ -5,17 +5,11 @@
  * サーバーサイドで環境変数を読み取り、HTMLに直接注入する
  * 
  * セキュリティに関する注意:
- * - Firebase API Keyは公開されても問題ありません（公式ドキュメント参照）
  * - Firebase API Keyは「識別子」であり、「認証情報」ではありません
  * - 実際のセキュリティはFirebase Security Rulesで制御されます
- * - すべてのクライアントサイドアプリ（Web/iOS/Android）で同じAPI Keyが公開されています
  * 
  * 参考: https://firebase.google.com/docs/projects/api-keys
  * 
- * ⚠️ 重要: 以下は絶対にHTMLに含めないでください:
- * - サーバーサイドのAPI Key（GEMINI_API_KEY等）
- * - データベースの認証情報
- * - プライベートキーやシークレット
  */
 
 export function FirebaseConfigScript() {
