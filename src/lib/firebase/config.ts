@@ -9,16 +9,7 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAuth, Auth } from 'firebase/auth';
-
-// Firebase設定（環境変数から取得）
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
+import { getFirebaseConfig } from './runtime-config';
 
 // Firebase インスタンスのキャッシュ
 let _app: FirebaseApp | null = null;
@@ -38,18 +29,32 @@ function initializeFirebase() {
     return;
   }
 
-  // Firebase初期化
-  if (getApps().length === 0) {
-    _app = initializeApp(firebaseConfig);
-    console.log('[Firebase] Initialized successfully');
-  } else {
-    _app = getApps()[0];
-    console.log('[Firebase] Using existing instance');
-  }
+  try {
+    // ランタイム設定を取得
+    const firebaseConfig = getFirebaseConfig();
+    
+    console.log('[Firebase] Initializing with config:', {
+      apiKey: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 10)}...` : 'undefined',
+      authDomain: firebaseConfig.authDomain || 'undefined',
+      projectId: firebaseConfig.projectId || 'undefined',
+    });
 
-  _db = getFirestore(_app);
-  _storage = getStorage(_app);
-  _auth = getAuth(_app);
+    // Firebase初期化
+    if (getApps().length === 0) {
+      _app = initializeApp(firebaseConfig);
+      console.log('[Firebase] Initialized successfully');
+    } else {
+      _app = getApps()[0];
+      console.log('[Firebase] Using existing instance');
+    }
+
+    _db = getFirestore(_app);
+    _storage = getStorage(_app);
+    _auth = getAuth(_app);
+  } catch (error) {
+    console.error('[Firebase] Initialization failed:', error);
+    throw error;
+  }
 }
 
 // Getter関数でアクセス（遅延初期化）
