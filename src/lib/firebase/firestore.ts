@@ -18,7 +18,7 @@ import {
   Timestamp,
   writeBatch,
 } from 'firebase/firestore';
-import { db } from './config';
+import { getFirebaseDb } from './config';
 import type { ChildProfile, ConversationMetadata, ConversationScene } from './types';
 
 // ========================================
@@ -34,6 +34,7 @@ export async function createChildProfile(
   age: number,
   parentUserId: string
 ): Promise<ChildProfile> {
+  const db = getFirebaseDb();
   const profile: ChildProfile = {
     childId,
     name,
@@ -62,6 +63,7 @@ export async function createChildProfile(
  * 子供のプロフィールを取得
  */
 export async function getChildProfile(childId: string): Promise<ChildProfile | null> {
+  const db = getFirebaseDb();
   const docRef = doc(db, 'children', childId);
   const docSnap = await getDoc(docRef);
   
@@ -79,6 +81,7 @@ export async function updateChildProfile(
   childId: string,
   updates: Partial<ChildProfile>
 ): Promise<void> {
+  const db = getFirebaseDb();
   const docRef = doc(db, 'children', childId);
   await updateDoc(docRef, {
     ...updates,
@@ -102,6 +105,7 @@ export async function createConversation(
   selectedExpert: string,
   selectionReason?: string
 ): Promise<ConversationMetadata> {
+  const db = getFirebaseDb();
   const metadata: ConversationMetadata = {
     conversationId,
     childId,
@@ -137,6 +141,7 @@ export async function completeConversation(
   totalScenes: number,
   duration?: number
 ): Promise<void> {
+  const db = getFirebaseDb();
   const conversationRef = doc(
     db,
     'children',
@@ -181,6 +186,7 @@ export async function getConversation(
   childId: string,
   conversationId: string
 ): Promise<ConversationMetadata | null> {
+  const db = getFirebaseDb();
   const docRef = doc(db, 'children', childId, 'conversations', conversationId);
   const docSnap = await getDoc(docRef);
   
@@ -198,6 +204,7 @@ export async function getRecentConversations(
   childId: string,
   limitCount: number = 10
 ): Promise<ConversationMetadata[]> {
+  const db = getFirebaseDb();
   const q = query(
     collection(db, 'children', childId, 'conversations'),
     orderBy('createdAt', 'desc'),
@@ -220,6 +227,7 @@ export async function addScene(
   conversationId: string,
   scene: Omit<ConversationScene, 'createdAt'>
 ): Promise<void> {
+  const db = getFirebaseDb();
   const sceneRef = doc(
     db,
     'children',
@@ -247,6 +255,7 @@ export async function addScenesBatch(
   conversationId: string,
   scenes: Omit<ConversationScene, 'createdAt'>[]
 ): Promise<void> {
+  const db = getFirebaseDb();
   const batch = writeBatch(db);
 
   scenes.forEach((scene) => {
@@ -279,6 +288,7 @@ export async function getScenes(
   childId: string,
   conversationId: string
 ): Promise<ConversationScene[]> {
+  const db = getFirebaseDb();
   const q = query(
     collection(db, 'children', childId, 'conversations', conversationId, 'scenes'),
     orderBy('order', 'asc')
@@ -300,6 +310,7 @@ export async function getConversationsByDateRange(
   startDate: Date,
   endDate: Date
 ): Promise<ConversationMetadata[]> {
+  const db = getFirebaseDb();
   const q = query(
     collection(db, 'children', childId, 'conversations'),
     where('createdAt', '>=', Timestamp.fromDate(startDate)),
@@ -318,6 +329,7 @@ export async function getConversationsByTopic(
   childId: string,
   curiosityType: string
 ): Promise<ConversationMetadata[]> {
+  const db = getFirebaseDb();
   const q = query(
     collection(db, 'children', childId, 'conversations'),
     where('curiosityType', '==', curiosityType),
@@ -335,6 +347,7 @@ export async function getCompletedConversations(
   childId: string,
   limitCount: number = 20
 ): Promise<ConversationMetadata[]> {
+  const db = getFirebaseDb();
   const q = query(
     collection(db, 'children', childId, 'conversations'),
     where('status', '==', 'completed'),
