@@ -15,7 +15,7 @@
 export function FirebaseConfigScript() {
   // ハードコードされた設定値（Cloud Consoleデプロイ用の一時的な解決策）
   const hardcodedConfig = {
-    apiKey: "AIzaSyC_GUeQP1ultb5Mc4LPTR1of4PGq-Apiyl",
+    apiKey: "AIzaSyC_GUeQP1uItb5Mc4LPTR1of4PGq-ApiyI",
     authDomain: "kids-kikkake-lab.firebaseapp.com",
     projectId: "kids-kikkake-lab",
     storageBucket: "kids-kikkake-lab.firebasestorage.app",
