@@ -4,49 +4,42 @@
 
 Cloud Runにデプロイすると`Firebase: Error (auth/invalid-api-key)`エラーが発生する。
 
-## 原因
+## 根本原因
 
-Next.jsの`NEXT_PUBLIC_*`環境変数は**ビルド時**にバンドルに埋め込まれるため、以下のいずれかの問題が発生している：
+Next.jsの`NEXT_PUBLIC_*`環境変数は**2箇所**で必要：
 
-1. Dockerビルド時に環境変数が正しく渡されていない
-2. `standalone`モードで環境変数が静的に解決されていない
-3. Cloud Runの環境変数設定がランタイムのみで、ビルド時に反映されていない
+1. **ビルド時** - クライアントサイドのJavaScriptバンドルに埋め込まれる
+2. **ランタイム（SSR時）** - サーバーサイドレンダリング時に`FirebaseConfigScript`が環境変数を読み取る
+
+Cloud Runでは、ビルド時の環境変数とランタイムの環境変数を**両方**設定する必要があります。
 
 ## 解決策
 
-### 修正内容
+### 推奨: デプロイスクリプトを使用
 
-1. **ランタイム設定の追加** (`src/lib/firebase/runtime-config.ts`)
-   - ビルド時とランタイムの両方で環境変数を取得できるように修正
-
-2. **HTMLへの設定注入** (`src/app/firebase-config-script.tsx`)
-   - サーバーサイドで環境変数を読み取り、クライアントに注入
-
-3. **Dockerfileのデバッグ追加**
-   - ビルド時に環境変数が設定されているか確認
-
-### デプロイ手順
-
-#### 方法1: Cloud Buildを使用（推奨）
+1. **環境変数ファイルを作成**
 
 ```bash
-# 1. cloudbuild.yamlを使用してビルド・デプロイ
-gcloud builds submit \
-  --config cloudbuild.yaml \
-  --substitutions=\
-_FIREBASE_API_KEY="YOUR_API_KEY",\
-_FIREBASE_AUTH_DOMAIN="YOUR_PROJECT.firebaseapp.com",\
-_FIREBASE_PROJECT_ID="YOUR_PROJECT_ID",\
-_FIREBASE_STORAGE_BUCKET="YOUR_PROJECT.appspot.com",\
-_FIREBASE_MESSAGING_SENDER_ID="YOUR_SENDER_ID",\
-_FIREBASE_APP_ID="YOUR_APP_ID",\
-_GEMINI_API_KEY="YOUR_GEMINI_KEY"
+cp .env.deploy.example .env.deploy
+# .env.deploy を編集して実際の値を設定
 ```
 
-#### 方法2: ローカルビルド + Cloud Run デプロイ
+2. **環境変数を読み込んでデプロイ**
 
 ```bash
-# 1. ローカルでDockerイメージをビルド
+source .env.deploy
+./deploy.sh
+```
+
+このスクリプトは以下を自動で行います：
+- ビルド時に`--build-arg`で環境変数を渡す
+- デプロイ時に`--set-env-vars`でランタイム環境変数を設定
+
+### 手動デプロイの場合
+
+#### ステップ1: ビルド時に環境変数を渡す
+
+```bash
 docker build \
   --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="YOUR_API_KEY" \
   --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="YOUR_PROJECT.firebaseapp.com" \
@@ -56,11 +49,11 @@ docker build \
   --build-arg NEXT_PUBLIC_FIREBASE_APP_ID="YOUR_APP_ID" \
   -t asia-northeast1-docker.pkg.dev/YOUR_PROJECT/cloud-run-source-deploy/kids-science-lab:latest \
   .
+```
 
-# 2. イメージをプッシュ
-docker push asia-northeast1-docker.pkg.dev/YOUR_PROJECT/cloud-run-source-deploy/kids-science-lab:latest
+#### ステップ2: ランタイム環境変数も設定してデプロイ
 
-# 3. Cloud Runにデプロイ（ランタイム環境変数も設定）
+```bash
 gcloud run deploy kids-science-lab \
   --image asia-northeast1-docker.pkg.dev/YOUR_PROJECT/cloud-run-source-deploy/kids-science-lab:latest \
   --region asia-northeast1 \
@@ -76,6 +69,8 @@ gcloud run deploy kids-science-lab \
   --set-env-vars="VERTEX_AI_PROJECT=YOUR_PROJECT_ID" \
   --set-env-vars="VERTEX_AI_LOCATION=asia-northeast1"
 ```
+
+**重要**: `--set-env-vars`でランタイム環境変数を設定しないと、SSR時に`FirebaseConfigScript`が環境変数を読み取れません。
 
 ### 確認方法
 

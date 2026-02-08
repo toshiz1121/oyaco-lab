@@ -52,6 +52,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# 注意: NEXT_PUBLIC_* 環境変数はCloud Runのランタイム環境変数から取得されます
+# Dockerfileでは設定せず、gcloud run deploy 時に --set-env-vars で設定してください
+
 # セキュリティ: 非rootユーザーで実行
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

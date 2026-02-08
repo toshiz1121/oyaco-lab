@@ -13,15 +13,24 @@
  */
 
 export function FirebaseConfigScript() {
-  // NEXT_PUBLIC_* 環境変数のみを注入（クライアントサイドで公開されるもの）
+  // サーバーサイドで環境変数を読み取る
+  // Next.jsのstandaloneモードでは、NEXT_PUBLIC_*環境変数は
+  // サーバーサイドでは読み取れないため、通常の環境変数としても設定する
   const config = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
   };
+  
+  // デバッグ: サーバーサイドで環境変数が読み取れているか確認
+  console.log('[FirebaseConfigScript] Server-side env check:', {
+    hasApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    hasProjectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    allEnvKeys: Object.keys(process.env).filter(k => k.includes('FIREBASE')),
+  });
 
   // 設定値の検証
   const hasAllKeys = Object.values(config).every(v => v !== undefined && v !== '');
