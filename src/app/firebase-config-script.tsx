@@ -13,24 +13,29 @@
  */
 
 export function FirebaseConfigScript() {
-  // サーバーサイドで環境変数を読み取る
-  // Next.jsのstandaloneモードでは、NEXT_PUBLIC_*環境変数は
-  // サーバーサイドでは読み取れないため、通常の環境変数としても設定する
-  const config = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
+  // ハードコードされた設定値（Cloud Consoleデプロイ用の一時的な解決策）
+  const hardcodedConfig = {
+    apiKey: "AIzaSyC_GUeQP1ultb5Mc4LPTR1of4PGq-Apiyl",
+    authDomain: "kids-kikkake-lab.firebaseapp.com",
+    projectId: "kids-kikkake-lab",
+    storageBucket: "kids-kikkake-lab.firebasestorage.app",
+    messagingSenderId: "245489518285",
+    appId: "1:245489518285:web:fc18538649d087c9840b84",
   };
   
-  // デバッグ: サーバーサイドで環境変数が読み取れているか確認
-  console.log('[FirebaseConfigScript] Server-side env check:', {
-    hasApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    hasProjectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    allEnvKeys: Object.keys(process.env).filter(k => k.includes('FIREBASE')),
-  });
+  // 環境変数があればそれを使用、なければハードコード値を使用
+  const config = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || hardcodedConfig.apiKey,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || hardcodedConfig.authDomain,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || hardcodedConfig.projectId,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || hardcodedConfig.storageBucket,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || hardcodedConfig.messagingSenderId,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || hardcodedConfig.appId,
+  };
+  
+  console.log('[FirebaseConfigScript] Config source:', 
+    process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'environment' : 'hardcoded'
+  );
 
   // 設定値の検証
   const hasAllKeys = Object.values(config).every(v => v !== undefined && v !== '');
