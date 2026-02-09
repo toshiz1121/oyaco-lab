@@ -74,12 +74,14 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
         });
 
         try {
+            // Googleでログインした認証情報を取得する
             const result = await signInWithPopup(auth, provider);
             const firebaseUser = result.user;
 
-            // 親の情報を取得または作成
+            // データベースから親情報を取得する
             let parentUser = await getParentUser(firebaseUser.uid);
 
+            // 親情報がない場合は、データベースに作成する
             if(!parentUser) {
                 parentUser = await createParentUser({
                     userId: firebaseUser.uid,
@@ -89,7 +91,10 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
                 });
             }
 
+            // 親ユーザー情報にセットされている子供の情報をセットする
             setChildrenIds(parentUser.children);
+
+            // アクティブな子供のIDをセットする
             setActiveChildId(parentUser.activeChildId || null);
         } catch (error) {
             console.error(error);
@@ -132,16 +137,16 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
         }
 
         try {
-            // 1. 子供IDを生成（タイムスタンプ + ランダム文字列）
+            // 子供IDを生成（タイムスタンプ + ランダム文字列）
             const childId = `child_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-            // 2. Firestoreに子供プロフィールを作成
+            // Firestoreに子供プロフィールを作成
             await createChildProfile(childId, name, age, parentUserId);
 
-            // 3. 親アカウントのchildren配列に追加
+            // 親アカウントのchildren配列に追加
             await addChildToParent(parentUserId, childId);
 
-            // 4. ローカル状態を更新
+            // ローカル状態を更新
             setChildrenIds((prev) => [...prev, childId]);
             setActiveChildId(childId); // 新しい子供を自動選択
 

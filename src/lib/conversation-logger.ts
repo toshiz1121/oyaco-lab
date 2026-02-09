@@ -116,7 +116,8 @@ export async function logConversation(params: LogConversationParams): Promise<st
       childId,
       conversationId,
       response.pairs?.length || 0,
-      duration
+      duration,
+      response.agentPipeline // パイプラインメタデータを渡す
     );
     console.log('[ConversationLogger] Step 3: Conversation completed successfully');
 

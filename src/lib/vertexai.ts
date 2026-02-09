@@ -23,7 +23,7 @@ import { VertexAI } from '@google-cloud/vertexai';
  * - as constにより、型安全性を確保
  */
 export const VERTEX_AI_CONFIG = {
-    project: process.env.VERTEX_AI_PROJECT || 'bright-arc-485311-v1',
+    project: process.env.VERTEX_AI_PROJECT || 'zenn202602',
     location: process.env.VERTEX_AI_LOCATION || 'asia-northeast1', // 東京リージョン
     models: {
         text: 'gemini-2.5-flash',           // テキスト生成・オーケストレーション用

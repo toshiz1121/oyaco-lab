@@ -151,3 +151,43 @@
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
 }
+
+/* モバイル対応: safe-area & タッチ最適化 */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS safe area padding utilities */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* スムーズスクロール */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* タッチデバイスでのボタンフィードバック改善 */
+@media (hover: none) and (pointer: coarse) {
+  button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* 小さい画面でのフォントサイズ最適化 */
+@media (max-width: 374px) {
+  html {
+    font-size: 14px;
+  }
+}

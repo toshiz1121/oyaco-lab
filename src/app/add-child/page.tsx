@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function AddChildPage() {
-  const { addChild, loading } = useAuth();
+  const { addChild } = useAuth();
   const router = useRouter();
   
   const [name, setName] = useState('');
@@ -62,40 +62,40 @@ export default function AddChildPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-8">
+    <div className="min-h-[100dvh] bg-gradient-to-b from-blue-50 to-white px-4 py-6 sm:p-8">
       <div className="max-w-2xl mx-auto">
         {/* 戻るボタン */}
         <button
           onClick={handleBack}
-          className="mb-6 text-blue-600 hover:text-blue-700 flex items-center gap-2"
+          className="mb-4 sm:mb-6 text-blue-600 hover:text-blue-700 flex items-center gap-2 min-h-[44px] text-sm sm:text-base"
         >
           <span>←</span>
           <span>戻る</span>
         </button>
 
         {/* タイトル */}
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">👶</div>
-          <h1 className="text-3xl font-bold mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">👶</div>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
             新しいお子さんを追加
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             お子さんの情報を入力してください
           </p>
         </div>
 
         {/* フォーム */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl sm:rounded-lg shadow-lg p-5 sm:p-8">
           {/* エラーメッセージ */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg text-sm sm:text-base text-red-600">
               {error}
             </div>
           )}
 
           {/* 名前入力 */}
-          <div className="mb-6">
-            <Label htmlFor="name" className="text-lg font-semibold mb-2 block">
+          <div className="mb-5 sm:mb-6">
+            <Label htmlFor="name" className="text-base sm:text-lg font-semibold mb-2 block">
               お名前（ニックネーム）
             </Label>
             <Input
@@ -104,21 +104,21 @@ export default function AddChildPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="たろう"
-              className="text-lg p-6"
+              className="text-base sm:text-lg p-4 sm:p-6 h-12 sm:h-14"
               maxLength={20}
               disabled={submitting}
             />
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-xs sm:text-sm text-gray-500 mt-1.5 sm:mt-2">
               ひらがな、カタカナ、漢字で入力できます（最大20文字）
             </p>
           </div>
 
           {/* 年齢選択 */}
-          <div className="mb-8">
-            <Label className="text-lg font-semibold mb-3 block">
+          <div className="mb-6 sm:mb-8">
+            <Label className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 block">
               年齢
             </Label>
-            <div className="grid grid-cols-5 gap-3">
+            <div className="grid grid-cols-5 gap-2 sm:gap-3">
               {ages.map((ageOption) => (
                 <button
                   key={ageOption}
@@ -126,8 +126,8 @@ export default function AddChildPage() {
                   onClick={() => setAge(ageOption)}
                   disabled={submitting}
                   className={`
-                    p-4 rounded-lg border-2 font-bold text-lg
-                    transition-all hover:scale-105
+                    p-2.5 sm:p-4 rounded-lg border-2 font-bold text-base sm:text-lg
+                    transition-all hover:scale-105 active:scale-95 min-h-[44px]
                     ${age === ageOption
                       ? 'bg-blue-500 text-white border-blue-500'
                       : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'
@@ -145,14 +145,14 @@ export default function AddChildPage() {
           <Button
             type="submit"
             disabled={submitting || !name.trim() || !age}
-            className="w-full py-6 text-lg font-bold"
+            className="w-full py-5 sm:py-6 text-base sm:text-lg font-bold min-h-[48px]"
           >
             {submitting ? '追加中...' : '追加する'}
           </Button>
         </form>
 
         {/* 注意事項 */}
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-gray-500">
           <p>※ 後から名前や年齢を変更することもできます</p>
         </div>
       </div>

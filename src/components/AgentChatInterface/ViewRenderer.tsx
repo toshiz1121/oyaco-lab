@@ -17,9 +17,10 @@ interface ViewRendererProps {
   isListening: boolean;
   onSpotlightComplete: () => void;
   onMicToggle: () => void;
+  onFollowUpQuestion?: (question: string) => void;
 }
 
-const CONTAINER_CLASSES = "w-full max-w-7xl mx-auto bg-white/95 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border-4 md:border-6 border-slate-900/10 h-full max-h-[calc(100vh-140px)]";
+const CONTAINER_CLASSES = "w-full max-w-7xl mx-auto bg-white/95 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border-2 sm:border-4 md:border-6 border-slate-900/10 h-full max-h-[calc(100dvh-100px)] sm:max-h-[calc(100dvh-120px)]";
 
 export function ViewRenderer({
   viewMode,
@@ -33,6 +34,7 @@ export function ViewRenderer({
   isListening,
   onSpotlightComplete,
   onMicToggle,
+  onFollowUpQuestion,
 }: ViewRendererProps) {
   
   // 博士選定中
@@ -74,6 +76,7 @@ export function ViewRenderer({
           onStartListening={onMicToggle}
           isListening={isListening}
           question={currentQuestion}
+          onFollowUpQuestion={onFollowUpQuestion}
         />
       </div>
     );

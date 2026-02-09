@@ -76,6 +76,7 @@ export function AgentChatInterface({
       isListening={isListening}
       onSpotlightComplete={handleSpotlightComplete}
       onMicToggle={handleMicToggle}
+      onFollowUpQuestion={handleQuestion}
     />
   );
 }

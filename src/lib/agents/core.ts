@@ -13,7 +13,7 @@
  */
 
 import { callVertexAI, VERTEX_AI_CONFIG } from '../vertexai';
-import { AgentRole, ExplanationStep, SentenceImagePair, PairStatus } from './types';
+import { AgentRole, ExplanationStep, SentenceImagePair, PairStatus, EducatorReview, FollowUpQuestion } from './types';
 import { agents } from './definitions';
 
 /**
@@ -52,18 +52,31 @@ export async function decideAgent(
     ? `Current Conversation Context:\n${history.map(m => `${m.role}: ${m.content}`).join('\n')}\n`
     : '';
 
+  // definitions.ts の expertise / cannotHandle から動的にエキスパートリストを構築
+  const expertList = Object.values(agents)
+    .filter(a => a.id !== 'orchestrator') // オーケストレーター自身は除外
+    .map(a => {
+      const expertiseStr = a.expertise.join('、');
+      const cannotStr = a.cannotHandle.length > 0
+        ? `（苦手: ${a.cannotHandle.join('、')}）`
+        : '';
+      return `- ${a.id}（${a.nameJa}）: 得意 → ${expertiseStr} ${cannotStr}`;
+    })
+    .join('\n    ');
+
   const prompt = `
     You are an orchestrator for a Kids Science Lab.
     Your task is to classify the user's question and select the best expert to answer it, considering the conversation history.
     
     Available Experts:
-    - scientist: Physics, chemistry, general science, technology.
-    - biologist: Animals, plants, bugs, biology.
-    - astronomer: Space, stars, planets, universe.
-    - historian: History, past events, old customs, dinosaurs (often overlaps with paleontologist but historian can handle storytelling).
-    - artist: Art, colors, feelings, beauty, creative questions.
+    ${expertList}
     
-    If the question doesn't fit any specific expert, choose 'scientist' as a default or 'educator' if it's about general guidance or life advice.
+    Selection Rules:
+    1. Match the question's topic to each expert's 得意 (expertise) keywords.
+    2. Avoid assigning a question to an expert whose 苦手 (cannotHandle) list includes the topic.
+    3. If the question is about the human body, health, food, sleep, or general life advice, choose 'educator'.
+    4. If the question doesn't clearly fit any specific expert, choose 'scientist' as a default.
+    5. Consider the conversation history — if the child is continuing a topic, prefer the same expert for continuity.
     
     ${historyText}
     
@@ -98,11 +111,11 @@ export async function decideAgent(
     if (agentId && Object.keys(agents).includes(agentId)) {
       return { agentId: agentId as AgentRole, reason };
     }
-    console.warn(`Orchestrator returned unknown role: ${agentId}. Fallback to scientist.`);
+    console.warn(`オーケストレーターが不明なロールを返しました: ${agentId}。scientistにフォールバックします。`);
     return { agentId: 'scientist', reason: "かがくのことがとくいだから" };
 
   } catch (error) {
-    console.error("Agent decision failed:", error);
+    console.error("エージェント選択に失敗しました:", error);
     return { agentId: 'scientist', reason: "かがくのことがとくいだから" };
   }
 }
@@ -130,23 +143,14 @@ export async function generateExpertResponse(
 ): Promise<{ text: string, steps: ExplanationStep[] }> {
   const agent = agents[agentId];
 
-  let styleInstruction = `
-# Role: 世界一の知識を持ち、子供と遊ぶのが上手な「物知り博士」
-# Persona: 威厳があるが温厚。「ほっほっほ」「おや、いい質問だね！」といった親しみやすい老博士の口調。
-# Constraints:
-1. 専門用語は一切使わず、小学校低学年が理解できる言葉のみで構成すること。
-2. 比喩の精度を最優先する。内容の本質と、例え（公園、お菓子、遊び等）が論理的に一致していること。
-3. 構成：質問を褒める ＞ 生活に密着した比喩で解説 ＞ 子供の好奇心を応援して締める。
-4. 読み聞かせのような、目線を感じさせる優しいトーンを維持すること。
-`;
-
-
+  // スタイル別の追加指示（default はなし — agent.persona がそのまま使われる）
+  let styleInstruction = '';
   if (style === 'metaphor') {
-    styleInstruction = "特に「例え話」を重視して説明してください。子供が想像しやすい身近なものに例えてください。";
+    styleInstruction = '特に「例え話」を重視して説明してください。子供が想像しやすい身近なものに例えてください。';
   } else if (style === 'simple') {
-    styleInstruction = "幼稚園児でもわかるくらい、とことん簡単な言葉で短く説明してください。";
+    styleInstruction = '幼稚園児でもわかるくらい、とことん簡単な言葉で短く説明してください。';
   } else if (style === 'detail') {
-    styleInstruction = "少し詳しく、小学校高学年向けに科学的な仕組みも踏まえて説明してください。";
+    styleInstruction = '少し詳しく、小学校高学年向けに科学的な仕組みも踏まえて説明してください。';
   }
 
   const historyText = history.length > 0
@@ -154,33 +158,39 @@ export async function generateExpertResponse(
     : '';
 
   const prompt = `
-    ${agent.persona}
-    
-    以下の質問に対し、設定されたペルソナに基づき、小学生（低学年〜中学年）に向けて解説してください。
-    ${styleInstruction}
+# あなたの設定
+${agent.persona}
 
-    ### 解説の指針（起承転結）
-    解説は以下の「起・承・転・結」の流れを意識し、2〜4ステップに集約してください。
-    1.【起】質問を褒め、身近なものに例えて全体像を伝える（導入）
-    2.【承】その例えを使って、仕組みや理由を具体的に広げる（展開）
-    3.【転】「もし〜がなかったら？」や「実はこうなんだよ」という驚きや視点の変化を与える（深掘り）
-    4.【結】まとめと、子供の未来や好奇心につながる励まし（結論）
+# 共通ルール
+1. 専門用語は一切使わず、小学校低学年が理解できる言葉のみで構成すること。
+2. 比喩の精度を最優先する。内容の本質と、例え（公園、お菓子、遊び等）が論理的に一致していること。
+3. 構成：質問を褒める ＞ 生活に密着した比喩で解説 ＞ 子供の好奇心を応援して締める。
+4. 読み聞かせのような、目線を感じさせる優しいトーンを維持すること。
+5. 必ず上記「あなたの設定」に書かれた口調で話すこと。他の博士の口調を使わないこと。
+${styleInstruction ? `6. ${styleInstruction}` : ''}
 
-    ### JSON形式
+### 解説の指針（起承転結）
+解説は以下の「起・承・転・結」の流れを意識し、2〜4ステップに集約してください。
+1.【起】質問を褒め、身近なものに例えて全体像を伝える（導入）
+2.【承】その例えを使って、仕組みや理由を具体的に広げる（展開）
+3.【転】「もし〜がなかったら？」や「実はこうなんだよ」という驚きや視点の変化を与える（深掘り）
+4.【結】まとめと、子供の未来や好奇心につながる励まし（結論）
+
+### JSON形式
+{
+  "text": "回答全体の要約。博士が自分の口調で優しく語りかける100文字程度のまとめ。",
+  "steps": [
     {
-      "text": "回答全体の要約。博士が優しく語りかける100文字程度のまとめ。",
-      "steps": [
-        {
-          "stepNumber": 1,
-          "text": "ステップ1の説明文（博士の口調、独立した完結文）",
-          "visualDescription": "Detailed English prompt for image generation reflecting this step's scene."
-        }
-      ]
+      "stepNumber": 1,
+      "text": "ステップ1の説明文（必ず自分の口調で、独立した完結文）",
+      "visualDescription": "Detailed English prompt for image generation reflecting this step's scene."
     }
-    
-    ${historyText}
-    
-    質問: "${question}"
+  ]
+}
+
+${historyText}
+
+質問: "${question}"
   `;
 
   try {
@@ -192,7 +202,6 @@ export async function generateExpertResponse(
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     if (!content) throw new Error("No content generated");
 
-    // Clean up potential markdown code blocks if the model ignores responseMimeType (backup)
     const jsonString = content.replace(/^```json\n|\n```$/g, '').replace(/^```\n|\n```$/g, '');
     const parsed = JSON.parse(jsonString);
 
@@ -202,11 +211,214 @@ export async function generateExpertResponse(
     };
 
   } catch (error) {
-    console.error("Expert response failed:", error);
+    console.error("エキスパート回答生成に失敗しました:", error);
     return {
       text: "申し訳ありません、通信のエラーで答えられませんでした。",
       steps: []
     };
+  }
+}
+
+/**
+ * educator が他の博士の回答をレビューする（フィードバックループ）
+ *
+ * 実装背景:
+ * - educator は回答テキストを受け取り、自律的に「修正が必要か」を判断する
+ * - 修正が必要な場合、具体的な修正版を自分で生成する
+ * - エキスパートとは異なる視点（子供の理解度）で評価する
+ * - → 単なるプロンプトテンプレートではなく、判断 + 行動のループ
+ *
+ * @param expertAgentId 回答した博士のID
+ * @param question 元の質問
+ * @param text 博士の回答要約
+ * @param steps 博士の回答ステップ
+ * @returns EducatorReview（approved + 修正版 or フィードバック）
+ */
+export async function educatorReview(
+  expertAgentId: AgentRole,
+  question: string,
+  text: string,
+  steps: ExplanationStep[]
+): Promise<EducatorReview> {
+  const educator = agents['educator'];
+  const expert = agents[expertAgentId];
+
+  const stepsText = steps
+    .map((s, i) => `ステップ${i + 1}: ${s.text}`)
+    .join('\n');
+
+  const prompt = `
+# あなたの役割
+${educator.persona}
+
+# タスク
+${expert.nameJa}が子供の質問に回答しました。
+この回答が「小学校低学年の子供にとって分かりやすいか」をチェックしてください。
+
+# チェック基準
+1. 難しい言葉や専門用語が使われていないか
+2. 文章が長すぎないか（1ステップ100文字以内が理想）
+3. 比喩が子供の生活に身近なものか
+4. 怖い表現や不安にさせる表現がないか
+5. 全体として子供が「わかった！」と思える内容か
+
+# 元の質問
+「${question}」
+
+# ${expert.nameJa}の回答
+要約: ${text}
+
+${stepsText}
+
+# 判断
+- 問題なければ approved: true にして、簡単なコメントを feedback に書いてください
+- 修正が必要なら approved: false にして、修正版を revisedSteps に書いてください
+  - 修正版は元の博士（${expert.nameJa}）の口調を維持してください
+  - visualDescription は変更しないでください
+
+# JSON形式で回答
+{
+  "approved": true,
+  "feedback": "チェック結果のコメント",
+  "revisedText": "修正後の要約（修正不要なら省略）",
+  "revisedSteps": [
+    {
+      "stepNumber": 1,
+      "text": "修正後のステップ文（修正不要なら省略）",
+      "visualDescription": "元のまま変更しない"
+    }
+  ]
+}
+`;
+
+  try {
+    console.log(`[Educator] ${expert.nameJa}の回答をレビュー中...`);
+
+    const data = await callVertexAI(AGENT_MODELS.expert, {
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.3, responseMimeType: "application/json" }
+    });
+
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!content) throw new Error("No content from educator review");
+
+    const jsonString = content.replace(/^```json\n|\n```$/g, '').replace(/^```\n|\n```$/g, '');
+    const parsed = JSON.parse(jsonString);
+
+    const approved = parsed.approved !== false; // デフォルトは approved
+    console.log(`[Educator] レビュー結果: approved=${approved}, feedback="${parsed.feedback}"`);
+
+    return {
+      approved,
+      feedback: parsed.feedback || (approved ? '問題ありません' : '修正が必要です'),
+      revisedText: approved ? undefined : parsed.revisedText,
+      revisedSteps: approved ? undefined : parsed.revisedSteps,
+    };
+
+  } catch (error) {
+    console.error("[Educator] レビューに失敗しました:", error);
+    // レビュー失敗時は元の回答をそのまま通す（安全側に倒す）
+    return {
+      approved: true,
+      feedback: 'レビュー処理でエラーが発生したため、元の回答をそのまま使用します',
+    };
+  }
+}
+
+/**
+ * 回答内容から深掘り質問候補を生成する（ツール使用の実現）
+ *
+ * 実装背景:
+ * - エキスパートが回答内容を分析し、関連する次の質問を自律的に生成
+ * - 別の博士の専門領域にまたがる質問も提案（エージェント間連携）
+ * - educator レビューと並列実行することでレイテンシを抑える
+ *
+ * @param agentId 回答した博士のID
+ * @param question 元の質問
+ * @param answerText 博士の回答要約
+ * @param steps 博士の回答ステップ
+ * @returns FollowUpQuestion の配列（2〜3個）
+ */
+export async function generateFollowUpQuestions(
+  agentId: AgentRole,
+  question: string,
+  answerText: string,
+  steps: ExplanationStep[]
+): Promise<FollowUpQuestion[]> {
+  const agent = agents[agentId];
+
+  // 他の博士の情報を動的に構築
+  const agentHints = Object.values(agents)
+    .filter(a => a.id !== 'orchestrator')
+    .map(a => `${a.id}（${a.nameJa}）: ${a.expertise.slice(0, 5).join('、')}`)
+    .join('\n');
+
+  const stepsText = steps
+    .map((s, i) => `ステップ${i + 1}: ${s.text}`)
+    .join('\n');
+
+  const prompt = `
+# タスク
+${agent.nameJa}が子供の質問に回答しました。
+この回答を踏まえて、子供が「もっと知りたい！」と思うような次の質問を2〜3個提案してください。
+
+# ルール
+1. 子供（小学校低学年）が自然に興味を持てる、ワクワクする質問にすること
+2. 自分の専門分野だけでなく、他の博士の分野にまたがる質問も含めること
+3. 元の質問の単純な繰り返しにならないこと
+4. 各質問に最適な博士（suggestedAgent）を指定すること
+5. 絵文字は質問の内容に合ったものを選ぶこと
+6. 端的に、文章が長くならないようにすること(15文字以内)
+
+# 利用可能な博士
+${agentHints}
+
+# 元の質問
+「${question}」
+
+# ${agent.nameJa}の回答
+${answerText}
+${stepsText}
+
+# JSON形式で回答
+[
+  {
+    "question": "子供向けの次の質問文",
+    "suggestedAgent": "scientist",
+    "emoji": "🔬"
+  }
+]
+`;
+
+  try {
+    console.log(`[FollowUp] ${agent.nameJa}の回答から深掘り質問を生成中...`);
+
+    const data = await callVertexAI(AGENT_MODELS.expert, {
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.7, responseMimeType: "application/json" }
+    });
+
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!content) throw new Error("No content from follow-up generation");
+
+    const jsonString = content.replace(/^```json\n|\n```$/g, '').replace(/^```\n|\n```$/g, '');
+    const parsed = JSON.parse(jsonString);
+
+    const questions: FollowUpQuestion[] = (Array.isArray(parsed) ? parsed : [])
+      .slice(0, 3)
+      .filter((q: any) => q.question && q.suggestedAgent)
+      .map((q: any) => ({
+        question: q.question,
+        suggestedAgent: Object.keys(agents).includes(q.suggestedAgent) ? q.suggestedAgent : agentId,
+        emoji: q.emoji || '❓',
+      }));
+
+    console.log(`[FollowUp] ${questions.length}個の深掘り質問を生成しました`);
+    return questions;
+
+  } catch (error) {
+    console.error("[FollowUp] 深掘り質問の生成に失敗しました:", error);
+    return [];
   }
 }
 
@@ -338,7 +550,7 @@ export async function generateIllustration(prompt: string): Promise<string | und
       return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
     }
   } catch (error) {
-    console.error("Illustration generation failed:", error);
+    console.error("イラスト生成に失敗しました:", error);
   }
   return undefined;
 }

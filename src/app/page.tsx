@@ -33,36 +33,36 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen bg-sky-50 flex flex-col font-sans">
-      {/* ヘッダー（固定） */}
-      <header className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-sky-200 px-4 py-3 z-10">
+    <div className="h-[100dvh] bg-sky-50 flex flex-col font-sans">
+      {/* ヘッダー（固定・コンパクト） */}
+      <header className="shrink-0 bg-white/95 backdrop-blur-sm shadow-sm border-b border-sky-200 px-3 sm:px-4 py-2 sm:py-3 z-10 safe-area-top">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
-          <div>
-            <h1 className="text-xl font-bold text-sky-600 flex items-center gap-1">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-sky-600 flex items-center gap-1 truncate">
               🧪 キッズサイエンスラボ 🔭
             </h1>
-            <p className="text-xs text-sky-700">なんで？をはかせにきいてみよう！</p>
+            <p className="text-[10px] sm:text-xs text-sky-700 truncate">なんで？をはかせにきいてみよう！</p>
           </div>
-          <Link href="/report">
-            <Button variant="outline" size="sm" className="gap-1 text-xs">
+          <Link href="/parent">
+            <Button variant="outline" size="sm" className="gap-1 text-xs shrink-0 ml-2 min-h-[36px] min-w-[36px]">
               <LineChart className="h-3 w-3" />
-              保護者
+              <span className="hidden sm:inline">保護者</span>
             </Button>
           </Link>
         </div>
       </header>
 
       {/* メインコンテンツ */}
-      <main className="flex-1 overflow-auto px-4 py-4 mt-[72px] mb-[48px]">
+      <main className="flex-1 overflow-auto px-2 sm:px-4 py-2 sm:py-4">
         <div className="w-full max-w-6xl mx-auto h-full flex items-center justify-center">
           <AgentChatInterface />
         </div>
       </main>
 
-      {/* フッター（固定） */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-sky-200 px-4 py-3 z-10">
+      {/* フッター（固定・最小限） */}
+      <footer className="shrink-0 bg-white/90 border-t border-sky-200 px-3 py-1.5 sm:py-2 z-10 safe-area-bottom">
         <div className="max-w-6xl mx-auto text-center">
-          <p className="text-xs text-sky-600">© 2024 AIキッズサイエンスラボ</p>
+          <p className="text-[10px] sm:text-xs text-sky-600">© 2024 AIキッズサイエンスラボ</p>
         </div>
       </footer>
     </div>

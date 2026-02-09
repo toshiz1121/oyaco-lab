@@ -19,6 +19,7 @@ const displayableExperts: AgentRole[] = [
   'astronomer',
   'historian',
   'artist',
+  'engineer',
   'educator'
 ];
 
@@ -94,7 +95,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
   const selectedAgent = agents[displayableExperts[spotlightIndex]];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[800px] md:h-[1000px] w-full rounded-3xl shadow-xl border-4 border-blue-100 p-4 md:p-8 relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-purple-50/30">
+    <div className="flex flex-col items-center justify-center min-h-[400px] sm:min-h-[600px] md:min-h-[700px] w-full rounded-2xl sm:rounded-3xl shadow-xl border-2 sm:border-4 border-blue-100 p-3 sm:p-4 md:p-8 relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-purple-50/30">
       
       {/* 暗転オーバーレイ（スポットライト演出時） - 非常に軽く */}
       <AnimatePresence>
@@ -113,7 +114,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
         {showSpotlight && confetti.map((conf) => (
           <motion.div
             key={`confetti-${conf.id}`}
-            className="absolute w-2 h-3 md:w-3 md:h-4 z-35"
+            className="absolute w-1.5 h-2 sm:w-2 sm:h-3 md:w-3 md:h-4 z-35"
             style={{
               backgroundColor: conf.color,
               left: `${50 + conf.x}%`,
@@ -160,13 +161,13 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", stiffness: 200 }}
-            className="mb-6 md:mb-8 text-center w-full px-4"
+            className="mb-4 sm:mb-6 md:mb-8 text-center w-full px-3 sm:px-4"
           >
-            <p className="text-xs md:text-sm text-blue-600 font-bold mb-2">
+            <p className="text-[10px] sm:text-xs md:text-sm text-blue-600 font-bold mb-1 sm:mb-2">
               きみのしつもん
             </p>
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl md:rounded-3xl px-4 md:px-8 py-3 md:py-4 border-3 border-blue-200 shadow-lg">
-              <p className="text-base md:text-xl text-blue-900 font-bold break-words">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl md:rounded-3xl px-3 sm:px-4 md:px-8 py-2 sm:py-3 md:py-4 border-2 sm:border-3 border-blue-200 shadow-lg">
+              <p className="text-sm sm:text-base md:text-xl text-blue-900 font-bold break-words">
                 {question}
               </p>
             </div>
@@ -184,7 +185,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
               duration: 1.5,
               repeat: Infinity,
             }}
-            className="text-2xl md:text-4xl font-bold text-blue-700 mb-6 md:mb-10"
+            className="text-lg sm:text-2xl md:text-4xl font-bold text-blue-700 mb-4 sm:mb-6 md:mb-10"
           >
             {isFinalized ? "✨ はかせが決まったよ！" : "🔍 だれにきくか かんがえているよ..."}
           </motion.h2>
@@ -192,7 +193,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
 
         {/* 専門家一覧（スポットライト前） */}
         {!showSpotlight && (
-          <div className="flex gap-4 md:gap-8 mb-8 md:mb-12 flex-wrap justify-center max-w-4xl px-4">
+          <div className="flex gap-2 sm:gap-4 md:gap-8 mb-4 sm:mb-8 md:mb-12 flex-wrap justify-center max-w-4xl px-2 sm:px-4">
             {displayableExperts.map((expertId, index) => {
               const expert = agents[expertId];
               const isSpotlit = index === spotlightIndex;
@@ -232,7 +233,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
                     />
                   )}
 
-                  <div className={`relative w-20 h-20 md:w-32 md:h-32 rounded-full overflow-hidden border-4 ${
+                  <div className={`relative w-14 h-14 sm:w-20 sm:h-20 md:w-32 md:h-32 rounded-full overflow-hidden border-2 sm:border-4 ${
                     isFinal 
                       ? "border-yellow-400 shadow-2xl" 
                       : isSpotlit 
@@ -251,7 +252,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
                   {isFinal && (
                     <>
                       <motion.div
-                        className="absolute -top-2 -right-2 text-4xl md:text-5xl"
+                        className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 text-2xl sm:text-4xl md:text-5xl"
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
@@ -259,7 +260,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
                         ⭐
                       </motion.div>
                       <motion.div
-                        className="absolute -top-2 -left-2 text-4xl md:text-5xl"
+                        className="absolute -top-1 -left-1 sm:-top-2 sm:-left-2 text-2xl sm:text-4xl md:text-5xl"
                         initial={{ scale: 0, rotate: 180 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ type: "spring", stiffness: 200, delay: 0.15 }}
@@ -274,9 +275,9 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
                     animate={{
                       opacity: isSpotlit ? 1 : 0.6,
                     }}
-                    className="mt-2 text-center"
+                    className="mt-1 sm:mt-2 text-center"
                   >
-                    <span className={`text-sm md:text-base font-bold ${
+                    <span className={`text-[10px] sm:text-sm md:text-base font-bold ${
                       isFinal ? "text-yellow-600" : "text-blue-700"
                     }`}>
                       {expert.nameJa}
@@ -306,7 +307,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
               {sparkles.slice(0, 12).map((sparkle) => (
                 <motion.div
                   key={sparkle.id}
-                  className="absolute text-2xl md:text-3xl pointer-events-none"
+                  className="absolute text-xl sm:text-2xl md:text-3xl pointer-events-none"
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ 
                     opacity: [0, 0.8, 0.8, 0],
@@ -330,7 +331,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
               <div className="relative">
                 {/* 超明るい白い背景円（博士を際立たせる） */}
                 <motion.div
-                  className="absolute w-64 h-64 md:w-80 md:h-80 rounded-full z-[-1] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                  className="absolute w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-full z-[-1] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ 
                     opacity: 1,
@@ -347,7 +348,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
 
                 {/* 光の輪（黄色のアクセント） */}
                 <motion.div
-                  className="absolute w-72 h-72 md:w-88 md:h-88 rounded-full z-[-2] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                  className="absolute w-56 h-56 sm:w-72 sm:h-72 md:w-88 md:h-88 rounded-full z-[-2] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ 
                     opacity: [0.7, 1, 0.7],
@@ -392,7 +393,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
                   />
 
                   {/* アバター本体 - より大きく、明るく */}
-                  <div className="relative w-40 h-40 md:w-56 md:h-56 rounded-full overflow-hidden border-6 md:border-8 border-yellow-400 shadow-2xl bg-white ring-8 ring-white">
+                  <div className="relative w-28 h-28 sm:w-40 sm:h-40 md:w-56 md:h-56 rounded-full overflow-hidden border-4 sm:border-6 md:border-8 border-yellow-400 shadow-2xl bg-white ring-4 sm:ring-8 ring-white">
                     <Image
                       src={selectedAgent.avatar}
                       alt={selectedAgent.nameJa}
@@ -404,7 +405,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
                   
                   {/* 王冠エフェクト */}
                   <motion.div
-                    className="absolute -top-12 md:-top-14 left-1/2 -translate-x-1/2 text-5xl md:text-7xl drop-shadow-2xl"
+                    className="absolute -top-8 sm:-top-12 md:-top-14 left-1/2 -translate-x-1/2 text-3xl sm:text-5xl md:text-7xl drop-shadow-2xl"
                     initial={{ opacity: 0, y: 30, scale: 0, rotate: -45 }}
                     animate={{ 
                       opacity: 1, 
@@ -425,7 +426,7 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
                   {[0, 1, 2, 3].map((i) => (
                     <motion.div
                       key={`star-${i}`}
-                      className="absolute text-3xl md:text-4xl drop-shadow-lg"
+                      className="absolute text-xl sm:text-3xl md:text-4xl drop-shadow-lg"
                       style={{
                         left: `${50 + Math.cos((i / 4) * Math.PI * 2) * 120}%`,
                         top: `${50 + Math.sin((i / 4) * Math.PI * 2) * 120}%`,
@@ -466,14 +467,14 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
                         duration: 1.2,
                         repeat: Infinity,
                       }}
-                      className="bg-gradient-to-r from-yellow-300 via-yellow-200 to-yellow-300 rounded-3xl px-6 md:px-10 py-4 md:py-5 shadow-2xl border-4 border-yellow-500"
+                      className="bg-gradient-to-r from-yellow-300 via-yellow-200 to-yellow-300 rounded-2xl sm:rounded-3xl px-4 sm:px-6 md:px-10 py-3 sm:py-4 md:py-5 shadow-2xl border-2 sm:border-4 border-yellow-500"
                     >
                       <motion.p
-                        className="text-2xl md:text-4xl font-bold text-slate-900 drop-shadow-sm mb-1"
+                        className="text-lg sm:text-2xl md:text-4xl font-bold text-slate-900 drop-shadow-sm mb-1"
                       >
                         🎉 {selectedAgent.nameJa} 🎉
                       </motion.p>
-                      <p className="text-lg md:text-xl text-slate-800 font-bold">
+                      <p className="text-sm sm:text-lg md:text-xl text-slate-800 font-bold">
                         に決定！
                       </p>
                     </motion.div>
@@ -488,15 +489,15 @@ export function ExpertSpotlight({ selectedExpert, selectionReason, question, onA
                     initial={{ opacity: 0, y: 40, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ type: "spring", stiffness: 150, damping: 15 }}
-                    className="bg-white/98 backdrop-blur-sm rounded-2xl md:rounded-3xl px-6 md:px-8 py-4 md:py-6 max-w-xl mx-4 shadow-2xl border-4 border-yellow-400"
+                    className="bg-white/98 backdrop-blur-sm rounded-xl sm:rounded-2xl md:rounded-3xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 max-w-xl mx-3 sm:mx-4 shadow-2xl border-2 sm:border-4 border-yellow-400"
                   >
-                    <div className="flex items-center justify-center gap-2 mb-3">
-                      <span className="text-2xl md:text-3xl">💡</span>
-                      <p className="text-base md:text-lg text-yellow-600 font-bold">
+                    <div className="flex items-center justify-center gap-2 mb-2 sm:mb-3">
+                      <span className="text-xl sm:text-2xl md:text-3xl">💡</span>
+                      <p className="text-sm sm:text-base md:text-lg text-yellow-600 font-bold">
                         えらばれたりゆう
                       </p>
                     </div>
-                    <p className="text-base md:text-xl text-slate-900 font-bold break-words text-center leading-relaxed">
+                    <p className="text-sm sm:text-base md:text-xl text-slate-900 font-bold break-words text-center leading-relaxed">
                       {selectionReason}
                     </p>
                   </motion.div>

@@ -27,7 +27,7 @@ const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${project
 ```
 
 **設定値**:
-- プロジェクト: `bright-arc-485311-v1`
+- プロジェクト: `zenn202602`
 - リージョン: `asia-northeast1` (東京)
 - モデル: `gemini-2.5-flash-tts`
 - ボイス: `charon` (Informative)
@@ -39,13 +39,13 @@ const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${project
 #### 1. Vertex AI API が有効になっているか確認
 
 ```bash
-gcloud services list --enabled --project=bright-arc-485311-v1 | grep aiplatform
+gcloud services list --enabled --project=zenn202602 | grep aiplatform
 ```
 
 有効になっていない場合:
 
 ```bash
-gcloud services enable aiplatform.googleapis.com --project=bright-arc-485311-v1
+gcloud services enable aiplatform.googleapis.com --project=zenn202602
 ```
 
 #### 2. 認証情報の確認
@@ -59,7 +59,7 @@ gcloud services enable aiplatform.googleapis.com --project=bright-arc-485311-v1
 ```bash
 gcloud ai models list \
   --region=asia-northeast1 \
-  --project=bright-arc-485311-v1 \
+  --project=zenn202602 \
   --filter="displayName:gemini"
 ```
 

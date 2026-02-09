@@ -148,7 +148,8 @@ export async function completeConversation(
   childId: string,
   conversationId: string,
   totalScenes: number,
-  duration?: number
+  duration?: number,
+  agentPipeline?: { selectedAgent: string; selectionReason: string; educatorReview?: { approved: boolean; feedback: string }; processingTimeMs: number }
 ): Promise<void> {
   console.log('[Firestore] completeConversation called', { childId, conversationId, totalScenes });
   
@@ -162,12 +163,18 @@ export async function completeConversation(
   );
 
   try {
-    await updateDoc(conversationRef, {
+    const updateData: Record<string, unknown> = {
       status: 'completed',
       completedAt: Timestamp.now(),
       totalScenes,
       duration,
-    });
+    };
+
+    if (agentPipeline) {
+      updateData.agentPipeline = agentPipeline;
+    }
+
+    await updateDoc(conversationRef, updateData);
     console.log('[Firestore] ✅ Conversation marked as completed');
 
     // 子供の統計情報を更新
@@ -385,3 +392,64 @@ export async function getCompletedConversations(
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => doc.data() as ConversationMetadata);
 }
+
+// ========================================
+// 親ダッシュボード用クエリ
+// ========================================
+
+/**
+ * 親の全子供プロフィールを取得
+ */
+export async function getChildrenByParent(
+  parentUserId: string
+): Promise<ChildProfile[]> {
+  const db = getFirebaseDb();
+  const q = query(
+    collection(db, 'children'),
+    where('parentUserId', '==', parentUserId),
+    where('isActive', '==', true),
+    orderBy('createdAt', 'desc')
+  );
+
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => doc.data() as ChildProfile);
+}
+
+/**
+ * 会話とシーンを一括取得
+ */
+export async function getConversationWithScenes(
+  childId: string,
+  conversationId: string
+): Promise<{ conversation: ConversationMetadata; scenes: ConversationScene[] } | null> {
+  const conversation = await getConversation(childId, conversationId);
+  if (!conversation) return null;
+
+  const scenes = await getScenes(childId, conversationId);
+  return { conversation, scenes };
+}
+
+/**
+ * 会話のフィードバック（ブックマーク・評価・メモ）を更新
+ */
+export async function updateConversationFeedback(
+  childId: string,
+  conversationId: string,
+  feedback: {
+    isBookmarked?: boolean;
+    rating?: number;
+    parentNotes?: string;
+  }
+): Promise<void> {
+  const db = getFirebaseDb();
+  const conversationRef = doc(
+    db,
+    'children',
+    childId,
+    'conversations',
+    conversationId
+  );
+  await updateDoc(conversationRef, feedback);
+  console.log(`[Firestore] Updated feedback for conversation: ${conversationId}`);
+}
+

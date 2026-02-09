@@ -30,7 +30,7 @@ export function InputView({ onStartListening, isListening, agentName, agentAvata
         {sparkles.map((sparkle) => (
           <motion.div
             key={sparkle.id}
-            className="absolute text-xl md:text-2xl"
+            className="absolute text-lg sm:text-xl md:text-2xl"
             style={{
               left: `${sparkle.left}%`,
               top: `${sparkle.top}%`,
@@ -58,25 +58,25 @@ export function InputView({ onStartListening, isListening, agentName, agentAvata
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex gap-3 md:gap-4 mt-4 md:mt-8"
+          className="flex gap-2 sm:gap-3 md:gap-4 mt-3 sm:mt-4 md:mt-8 px-3"
         >
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold px-5 md:px-7 py-2 md:py-2.5 text-sm md:text-base rounded-full shadow-md cursor-default border-2 border-blue-400"
+            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold px-4 sm:px-5 md:px-7 py-1.5 sm:py-2 md:py-2.5 text-xs sm:text-sm md:text-base rounded-full shadow-md cursor-default border-2 border-blue-400"
           >
             🎤 おはなしモード
           </motion.div>
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="bg-gray-200/70 text-gray-500 font-bold px-5 md:px-7 py-2 md:py-2.5 text-sm md:text-base rounded-full cursor-not-allowed border-2 border-gray-300"
+            className="bg-gray-200/70 text-gray-500 font-bold px-4 sm:px-5 md:px-7 py-1.5 sm:py-2 md:py-2.5 text-xs sm:text-sm md:text-base rounded-full cursor-not-allowed border-2 border-gray-300"
           >
             📚 コンテンツ
           </motion.div>
         </motion.div>
 
         {/* Center Character */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 md:gap-6 px-4">
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 sm:gap-4 md:gap-6 px-4">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -112,12 +112,12 @@ export function InputView({ onStartListening, isListening, agentName, agentAvata
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="w-48 h-48 md:w-80 md:h-80 relative"
+              className="w-36 h-36 sm:w-48 sm:h-48 md:w-72 md:h-72 lg:w-80 lg:h-80 relative rounded-full overflow-hidden border-4 sm:border-6 md:border-8 border-white shadow-xl bg-white"
             >
               <img
                 src={agentAvatar}
                 alt={agentName}
-                className="w-full h-full object-contain drop-shadow-xl"
+                className="w-full h-full object-cover drop-shadow-xl"
               />
             </motion.div>
           </motion.div>
@@ -126,7 +126,7 @@ export function InputView({ onStartListening, isListening, agentName, agentAvata
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="text-2xl md:text-3xl font-bold text-blue-700"
+            className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-700"
           >
             {agentName}
           </motion.h2>
@@ -135,20 +135,20 @@ export function InputView({ onStartListening, isListening, agentName, agentAvata
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="text-base md:text-lg text-gray-700 font-medium text-center px-4"
+            className="text-sm sm:text-base md:text-lg text-gray-700 font-medium text-center px-4"
           >
             なんでも きいてね！
           </motion.p>
         </div>
 
-        {/* Bottom Area */}
+        {/* Bottom Area - マイクボタン */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="w-full max-w-3xl mx-auto h-32 md:h-40 flex flex-col items-center justify-center relative mb-4 md:mb-8"
+          className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center relative mb-3 sm:mb-4 md:mb-8 pb-safe"
         >
-          <div className="flex flex-col items-center gap-3 md:gap-4">
+          <div className="flex flex-col items-center gap-2 sm:gap-3 md:gap-4">
             <motion.div
               animate={{
                 scale: isListening ? [1, 1.05, 1] : 1,
@@ -166,7 +166,7 @@ export function InputView({ onStartListening, isListening, agentName, agentAvata
             </motion.div>
             
             <motion.span
-              className="text-xl md:text-2xl font-bold text-blue-700"
+              className="text-lg sm:text-xl md:text-2xl font-bold text-blue-700"
             >
               {isListening ? "🎤 はなしてね！" : "👆 しつもんする！"}
             </motion.span>
