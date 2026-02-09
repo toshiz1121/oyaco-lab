@@ -5,8 +5,7 @@ import { StreamingText } from './StreamingText';
 import { AgentResponse, ExplanationStep, SentenceImagePair } from '@/lib/agents/types';
 import { Agent } from '@/lib/agents/types';
 import { useTextToSpeech, LoadedAudio } from '@/hooks/useTextToSpeech';
-import { useBackgroundImageGenerator } from '@/hooks/useBackgroundImageGenerator';
-import { useBackgroundAudioGenerator } from '@/hooks/useBackgroundAudioGenerator';
+import { useBackgroundPairGenerator } from '@/hooks/useBackgroundPairGenerator';
 import { Button } from '@/components/ui/button';
 import { Volume2, Loader2, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -63,6 +62,7 @@ function ParallelResultView({ response, agent, onStartListening, isListening, qu
   const [currentIndex, setCurrentIndex] = useState(0);
   const [pairs, setPairs] = useState<SentenceImagePair[]>(response.pairs || []);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isWaitingForAudio, setIsWaitingForAudio] = useState(false);
   const [showFollowUp, setShowFollowUp] = useState(false);
 
   const currentPair = pairs[currentIndex];
@@ -85,25 +85,22 @@ function ParallelResultView({ response, agent, onStartListening, isListening, qu
     }
   }, []);
 
-  // バックグラウンド画像生成
-  useBackgroundImageGenerator(pairs, (pairId, imageUrl, status) => {
-    setPairs(prev => prev.map(p =>
-      p.id === pairId
-        ? { ...p, imageUrl, status, generatedAt: new Date() }
-        : p
-    ));
-  });
+  // バックグラウンドで次の1ステップだけ先読み生成
+  useBackgroundPairGenerator(pairs, currentIndex, (pairId, updates) => {
+    setPairs(prev => prev.map(p => {
+      if (p.id !== pairId) return p;
+      return {
+        ...p,
+        ...(updates.audioData !== undefined ? { audioData: updates.audioData } : {}),
+        ...(updates.imageUrl !== undefined ? { imageUrl: updates.imageUrl } : {}),
+        ...(updates.status !== undefined ? { status: updates.status } : {}),
+        ...(updates.status === 'ready' ? { generatedAt: new Date() } : {}),
+      };
+    }));
 
-  // バックグラウンド音声生成
-  useBackgroundAudioGenerator(pairs, (pairId, audioData) => {
-    // ペアの音声データを更新
-    setPairs(prev => prev.map(p =>
-      p.id === pairId ? { ...p, audioData } : p
-    ));
-    
     // 音声データをキャッシュ
-    if (audioData) {
-      const audioUrl = `data:audio/wav;base64,${audioData}`;
+    if (updates.audioData) {
+      const audioUrl = `data:audio/wav;base64,${updates.audioData}`;
       const audio = new Audio(audioUrl);
       audioCache.current.set(pairId, audio);
       console.log(`[DEBUG] Audio cached for ${pairId}`);
@@ -139,7 +136,7 @@ function ParallelResultView({ response, agent, onStartListening, isListening, qu
     // 音声データがまだない場合は待機（最大30秒）
     if (!cachedAudio) {
       console.log(`[DEBUG] Audio not ready for ${pair.id}, waiting for generation...`);
-      setIsSpeaking(true); // ローディング状態を表示
+      setIsWaitingForAudio(true);
       
       const maxWaitTime = 30000; // 最大30秒待機（レート制限を考慮）
       const checkInterval = 500; // 500msごとにチェック
@@ -161,6 +158,8 @@ function ParallelResultView({ response, agent, onStartListening, isListening, qu
           console.log(`[DEBUG] Still waiting for audio ${pair.id}... (${waited / 1000}s)`);
         }
       }
+      
+      setIsWaitingForAudio(false);
       
       // 待機後もまだない場合はフォールバック
       if (!cachedAudio) {
@@ -411,12 +410,25 @@ function ParallelResultView({ response, agent, onStartListening, isListening, qu
 
             <div className="flex-1 bg-white rounded-xl sm:rounded-2xl rounded-bl-none p-2.5 sm:p-3 md:p-4 border-2 border-blue-200 shadow-md relative min-h-[60px] sm:min-h-[80px] max-h-[120px] sm:max-h-[160px] md:max-h-[200px] overflow-y-auto">
               <p className="text-xs sm:text-sm md:text-base leading-relaxed pr-6 sm:pr-7">{currentPair.text}</p>
+              
+              {/* 音声準備中の表示 */}
+              {isWaitingForAudio && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-1.5 mt-1.5 text-blue-500"
+                >
+                  <Loader2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-spin" />
+                  <span className="text-[10px] sm:text-xs font-medium">おんせいをじゅんびちゅう...</span>
+                </motion.div>
+              )}
+              
               <Button
                 variant="ghost"
                 size="icon"
                 className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 text-slate-400 hover:text-blue-500 h-6 w-6 sm:h-7 sm:w-7"
                 onClick={() => { stopAudio(); playAudio(currentPair); }}
-                disabled={isSpeaking}
+                disabled={isSpeaking || isWaitingForAudio}
               >
                 <Volume2 className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isSpeaking ? "animate-pulse text-blue-500" : ""}`} />
               </Button>

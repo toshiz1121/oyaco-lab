@@ -23,7 +23,7 @@ import { VertexAI } from '@google-cloud/vertexai';
  * - as constにより、型安全性を確保
  */
 export const VERTEX_AI_CONFIG = {
-    project: process.env.VERTEX_AI_PROJECT,
+    project: process.env.VERTEX_AI_PROJECT || process.env.GOOGLE_CLOUD_PROJECT_ID,
     location: process.env.VERTEX_AI_LOCATION,
     models: {
         text: 'gemini-2.5-flash',           // テキスト生成・オーケストレーション用
@@ -213,7 +213,6 @@ export async function callVertexAI(
             const result = await model.generateContent(requestBody);
             const response = result.response;
 
-            // レスポンスデータの構造化
             const data = {
                 candidates: response.candidates,
                 promptFeedback: response.promptFeedback,
@@ -229,7 +228,6 @@ export async function callVertexAI(
         } catch (error: any) {
             console.error(`[Vertex AI] Error calling ${modelName}:`, error);
 
-            // エラーを構造化してスロー
             throw new VertexAIError(
                 `Vertex AI API call failed: ${error.message}`,
                 error.code,

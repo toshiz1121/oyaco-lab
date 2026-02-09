@@ -5,112 +5,74 @@ import { SentenceImagePair, PairStatus } from '@/lib/agents/types';
 import { generateNextImageAction } from '@/app/actions';
 
 /**
- * バックグラウンドで画像を並列生成するカスタムフック
+ * バックグラウンドで画像を順次生成するカスタムフック
  * 
- * 実装背景:
- * - 並列文章-画像生成フローのためのフック
- * - MAX_PARALLEL制限（2）を実装
- * - アクティブリクエストとキューの管理
- * - ペア状態更新のコールバック
+ * レート制限対策:
+ * - サーバー側のグローバルリクエストキューが全Vertex AIリクエストを一元管理
+ * - 画像生成はnormal優先度でキューに入り、TTS（high）の後に処理される
+ * - クライアント側での独自ディレイは不要
  * 
  * @param pairs 文章画像ペアの配列
  * @param onPairUpdate ペア状態更新時のコールバック
- * @returns アクティブなリクエスト数とキューの長さ
  */
 export function useBackgroundImageGenerator(
   pairs: SentenceImagePair[],
   onPairUpdate: (pairId: string, imageUrl: string | null, status: PairStatus) => void
 ) {
-  const MAX_PARALLEL = 1; // レート制限対策: 同時に1つのみ実行
-  const REQUEST_DELAY = 3000; // リクエスト間の遅延（3秒）
-  const activeRequests = useRef<Set<string>>(new Set());
-  const queue = useRef<SentenceImagePair[]>([]);
   const isProcessing = useRef(false);
-  const lastRequestTime = useRef<number>(0);
+  const processedIds = useRef<Set<string>>(new Set());
   
   useEffect(() => {
-    // 最初のペア（すでに生成済み）をスキップ
-    // また、最初のペアが'generating'の場合は待機
     const firstPair = pairs[0];
     if (!firstPair || firstPair.status === 'generating') {
-      console.log(`[DEBUG] Waiting for first pair to complete before starting background generation...`);
+      console.log(`[ImageGen] Waiting for first pair to complete before starting background generation...`);
       return;
     }
     
     const pendingPairs = pairs.filter(
-      (p, index) => index > 0 && p.status === 'pending'
+      (p, index) => index > 0 && p.status === 'pending' && !processedIds.current.has(p.id)
     );
     
-    queue.current = pendingPairs;
-    
-    if (!isProcessing.current && queue.current.length > 0) {
-      console.log(`[DEBUG] Starting background generation for ${queue.current.length} pairs`);
-      processQueue();
+    if (!isProcessing.current && pendingPairs.length > 0) {
+      console.log(`[ImageGen] Starting background generation for ${pendingPairs.length} pairs`);
+      processQueue(pendingPairs);
     }
   }, [pairs]);
   
-  const processQueue = async () => {
+  const processQueue = async (pendingPairs: SentenceImagePair[]) => {
     if (isProcessing.current) return;
     isProcessing.current = true;
     
-    // レート制限対策: 順次処理（MAX_PARALLEL=1）
-    // 各リクエスト間に遅延を入れる
-    
-    while (queue.current.length > 0 || activeRequests.current.size > 0) {
-      // アクティブなリクエストがMAX_PARALLEL未満で、キューにアイテムがある場合
-      while (queue.current.length > 0 && activeRequests.current.size < MAX_PARALLEL) {
-        const pair = queue.current.shift();
-        if (!pair) break;
-        
-        // レート制限対策: 前回のリクエストから一定時間経過するまで待機
-        const now = Date.now();
-        const timeSinceLastRequest = now - lastRequestTime.current;
-        if (timeSinceLastRequest < REQUEST_DELAY) {
-          const waitTime = REQUEST_DELAY - timeSinceLastRequest;
-          console.log(`[DEBUG] Waiting ${waitTime}ms before next request to avoid rate limit...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        }
-        lastRequestTime.current = Date.now();
-        
-        activeRequests.current.add(pair.id);
-        
-        // ステータスを'generating'に更新
-        onPairUpdate(pair.id, null, 'generating');
-        
-        // 画像生成（非同期で実行）
-        generateNextImageAction(pair.id, pair.visualDescription)
-          .then(({ imageUrl, status }) => {
-            onPairUpdate(pair.id, imageUrl, status);
-          })
-          .catch((error) => {
-            console.error(`[ERROR] Unexpected error for ${pair.id}:`, error);
-            onPairUpdate(pair.id, null, 'error');
-          })
-          .finally(() => {
-            activeRequests.current.delete(pair.id);
-            // 次のキューアイテムを処理
-            if (queue.current.length > 0) {
-              processQueue();
-            }
-          });
-      }
+    for (const pair of pendingPairs) {
+      if (processedIds.current.has(pair.id)) continue;
       
-      // アクティブなリクエストが完了するまで待機
-      if (activeRequests.current.size >= MAX_PARALLEL || queue.current.length === 0) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      processedIds.current.add(pair.id);
+      onPairUpdate(pair.id, null, 'generating');
       
-      // すべて完了したら終了
-      if (queue.current.length === 0 && activeRequests.current.size === 0) {
-        break;
+      try {
+        console.log(`[ImageGen] Generating image for ${pair.id}...`);
+        const { imageUrl, status } = await generateNextImageAction(pair.id, pair.visualDescription);
+        onPairUpdate(pair.id, imageUrl, status);
+        console.log(`[ImageGen] Image generated for ${pair.id}: ${status}`);
+      } catch (error) {
+        console.error(`[ImageGen] Unexpected error for ${pair.id}:`, error);
+        onPairUpdate(pair.id, null, 'error');
       }
     }
     
     isProcessing.current = false;
+    console.log(`[ImageGen] Background image generation complete`);
   };
   
+  // クリーンアップ時に処理済みIDをリセット
+  useEffect(() => {
+    return () => {
+      processedIds.current.clear();
+    };
+  }, []);
+  
   return {
-    activeCount: activeRequests.current.size,
-    queueLength: queue.current.length,
+    activeCount: 0,
+    queueLength: 0,
   };
 }

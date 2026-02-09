@@ -500,3 +500,46 @@ export async function generateNextImageAction(
     status: 'error'
   };
 }
+
+/**
+ * 1ステップ分の音声と画像をセットで順次生成するサーバーアクション
+ * 
+ * TTS → 画像の順に生成する。TTSを先に生成することで、
+ * 音声再生を早く開始でき、画像は音声再生中に表示される。
+ * レート制限を避けるため、並列ではなく順次実行する。
+ */
+export async function generateNextPairAction(
+  pairId: string,
+  text: string,
+  visualDescription: string
+): Promise<{ audioData: string | null; imageUrl: string | null; status: 'ready' | 'error' }> {
+  console.log(`[PairGen] ${pairId}: 音声+画像の生成を開始`);
+
+  // 1. まずTTSを生成（優先）
+  let audioData: string | null = null;
+  try {
+    audioData = await generateSpeech(text);
+    console.log(`[PairGen] ${pairId}: 音声生成 ${audioData ? '成功' : '失敗'}`);
+  } catch (error) {
+    console.error(`[PairGen] ${pairId}: 音声生成エラー:`, error);
+  }
+
+  // TTS→画像の間にクールダウン（レート制限回避）
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
+  // 2. 次に画像を生成
+  let imageUrl: string | null = null;
+  let status: 'ready' | 'error' = 'error';
+  try {
+    const result = await generateIllustration(visualDescription);
+    if (result) {
+      imageUrl = result;
+      status = 'ready';
+      console.log(`[PairGen] ${pairId}: 画像生成成功`);
+    }
+  } catch (error) {
+    console.error(`[PairGen] ${pairId}: 画像生成エラー:`, error);
+  }
+
+  return { audioData, imageUrl, status };
+}
