@@ -97,6 +97,16 @@ export async function generateConversationSuggestion(
 
         const result = await generateSuggestionInternal(childId, profile);
         
+        // キャッシュが一定貯まった場合は削除
+        if(suggestionCache.size > 50) {
+          const keysToDelete = suggestionCache.keys();
+          for(let i = 0; i < 10; i++) {
+            const {value, done} = keysToDelete.next();
+            if(done) break;  
+            suggestionCache.delete(value);
+          }
+        }
+
         if (result.suggestions.length > 0) {
           // 成功: キャッシュに保存して返す
           suggestionCache.set(childId, { 

@@ -159,8 +159,8 @@ export async function generateResponseAction(
 
     // パイプラインメタデータを構築
     const pipelineMetadata: AgentPipelineMetadata = {
-      selectedAgent: agentId,   // どのエージェントが選択されたのか
-      selectionReason: '',     // decideAgentAction で設定済み、ここでは空
+      selectedAgent: agentId,   // どのエージェントが
+      selectionReason: '', // decideAgentAction で設定済み、ここでは空
       educatorReview: reviewResult ? {
         approved: reviewResult.approved,
         feedback: reviewResult.feedback,
@@ -271,7 +271,7 @@ export async function consultAction(
 
     if (!useParallelGeneration) {
       // 並列生成が無効の場合は従来の逐次処理フローを使用
-      return await legacyConsultFlow(question, history, style);
+      return await sequentialConsultFlow(question, history, style);
     }
 
     // 並列生成フロー: 文章と画像を段階的に生成
@@ -359,13 +359,13 @@ export async function consultAction(
  * @param style 説明スタイル
  * @returns 成功/失敗とエージェントの回答データ
  */
-async function legacyConsultFlow(
+async function sequentialConsultFlow(
   question: string,
   history: { role: string, content: string }[] = [],
   style: ExplanationStyle = 'default'
 ): Promise<ConsultationResult> {
   try {
-    console.log(`[DEBUG] レガシーの逐次フローを使用します`);
+    console.log(`[DEBUG] 逐次フローを使用します`);
 
     // ステップ1: 質問内容に最適な専門家エージェントを選択
     console.log(`[DEBUG] ステップ1: エージェントを選択中...`);
