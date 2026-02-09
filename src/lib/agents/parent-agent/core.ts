@@ -226,13 +226,19 @@ export async function runParentAgent(
 /**
  * ツール名に応じて適切な関数を呼び出す
  * 新しいツールを追加する場合はここに case を追加する
+ * 
+ * 注意: LLMが childId に子供の名前を渡すことがあるため、
+ * 常に fallbackChildId（実際のFirestore ID）を使用する
  */
 async function executeToolCall(
   toolName: string,
   args: Record<string, unknown>,
   fallbackChildId: string
 ): Promise<unknown> {
-  const childId = (args.childId as string) || fallbackChildId;
+  // LLMが名前を渡すことがあるため、常に実際のchildIdを使用
+  const childId = fallbackChildId;
+  console.log(`[ParentAgent] executeToolCall: ${toolName}, childId: ${childId} (args.childId was: ${args.childId})`);
+
 
   switch (toolName) {
     case 'analyzeConversationHistory': {

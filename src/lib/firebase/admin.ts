@@ -26,11 +26,16 @@ function getAdminApp(): App {
 
   // GOOGLE_APPLICATION_CREDENTIALS が設定されていればデフォルト認証を使用
   // Cloud Run / GCE 上ではメタデータサーバーから自動取得される
+  // 環境変数からプロジェクトIDを取得、なければデフォルト値を使用
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 
+                    process.env.FIREBASE_PROJECT_ID || 
+                    'kids-kikkake-lab';
+  
   _adminApp = initializeApp({
-    projectId: 'kids-kikkake-lab',
+    projectId,
   });
 
-  console.log('[Firebase Admin] Initialized');
+  console.log(`[Firebase Admin] Initialized with projectId: ${projectId}`);
   return _adminApp;
 }
 

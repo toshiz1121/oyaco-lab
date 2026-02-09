@@ -84,13 +84,20 @@ export async function analyzeLearningProgress(
   // 今週（直近7日）
   const thisWeekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const thisWeekConvs = await getConversationsByDateRange(childId, thisWeekStart, now);
-  console.log(`今週の会話${thisWeekConvs}`);
+  console.log(`[analyzeLearningProgress] 今週の会話数: ${thisWeekConvs.length}`);
+  console.log(`[analyzeLearningProgress] 今週の会話:`, JSON.stringify(thisWeekConvs.map(c => ({
+    id: c.conversationId,
+    question: c.question.substring(0, 30),
+    status: c.status,
+    createdAt: c.createdAt?.toDate?.()?.toISOString()
+  })), null, 2));
   const thisWeekCompleted = thisWeekConvs.filter(c => c.status === 'completed');
 
   // 先週（8〜14日前）
   const lastWeekStart = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const lastWeekEnd = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const lastWeekConvs = await getConversationsByDateRange(childId, lastWeekStart, lastWeekEnd);
+  console.log(`[analyzeLearningProgress] 先週の会話数: ${lastWeekConvs.length}`);
   const lastWeekCompleted = lastWeekConvs.filter(c => c.status === 'completed');
 
   // トレンド判定

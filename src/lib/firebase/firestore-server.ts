@@ -53,14 +53,28 @@ export async function getConversationsByDateRangeServer(
   endDate: Date
 ): Promise<ConversationMetadata[]> {
   const db = getAdminDb();
+  
+  console.log(`[Firestore Server] Querying conversations for childId: ${childId}`);
+  console.log(`[Firestore Server] Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+  
   const snapshot = await db
     .collection('children')
     .doc(childId)
     .collection('conversations')
     .where('createdAt', '>=', startDate)
     .where('createdAt', '<=', endDate)
-    .orderBy('createdAt', 'desc')
     .get();
 
-  return snapshot.docs.map(doc => doc.data() as ConversationMetadata);
+  const conversations = snapshot.docs.map(doc => doc.data() as ConversationMetadata);
+  
+  // メモリ上でソート（orderByを削除してインデックス不要に）
+  conversations.sort((a, b) => {
+    const aTime = a.createdAt?.toDate?.()?.getTime() || 0;
+    const bTime = b.createdAt?.toDate?.()?.getTime() || 0;
+    return bTime - aTime; // 降順
+  });
+  
+  console.log(`[Firestore Server] Found ${conversations.length} conversations`);
+  
+  return conversations;
 }
