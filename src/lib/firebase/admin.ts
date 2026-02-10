@@ -1,8 +1,9 @@
 /**
  * Firebase Admin SDK 初期化（サーバーサイド専用）
  *
- * Server Action や API Route など Node.js 上で Firestore にアクセスするために使用。
- * 認証は GOOGLE_APPLICATION_CREDENTIALS（サービスアカウントキー）を利用する。
+ * Cloud Run環境:
+ * - FIREBASE_SERVICE_ACCOUNT_JSON: Secret Managerから環境変数としてマウント（推奨）
+ * - FIREBASE_SERVICE_ACCOUNT_BASE64: Base64エンコードされたサービスアカウント
  *
  * クライアント用の firebase/config.ts とは別物。混同しないこと。
  */
@@ -24,18 +25,31 @@ function getAdminApp(): App {
     return _adminApp;
   }
 
-  // GOOGLE_APPLICATION_CREDENTIALS が設定されていればデフォルト認証を使用
-  // Cloud Run / GCE 上ではメタデータサーバーから自動取得される
-  // 環境変数からプロジェクトIDを取得、なければデフォルト値を使用
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 
                     process.env.FIREBASE_PROJECT_ID || 
                     'kids-kikkake-lab';
-  
-  _adminApp = initializeApp({
-    projectId,
-  });
 
-  console.log(`[Firebase Admin] Initialized with projectId: ${projectId}`);
+  try {
+    // Cloud Run - JSON文字列として直接設定（Secret Manager経由、推奨）
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+      _adminApp = initializeApp({
+        credential: cert(serviceAccount),
+        projectId,
+      });
+      console.log(`[Firebase Admin] Initialized with JSON service account`);
+      return _adminApp;
+    }
+
+    // フォールバック: 同一プロジェクトの場合のみ動作
+    console.warn('[Firebase Admin] No service account configured. Using default credentials (same project only)');
+    _adminApp = initializeApp({ projectId });
+    
+  } catch (error) {
+    console.error('[Firebase Admin] Initialization failed:', error);
+    throw new Error('Firebase Admin SDK initialization failed. Please check service account configuration.');
+  }
+
   return _adminApp;
 }
 

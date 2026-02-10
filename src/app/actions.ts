@@ -274,31 +274,40 @@ export async function consultAction(
       return await sequentialConsultFlow(question, history, style);
     }
 
-    // 並列生成フロー: 文章と画像を段階的に生成
-    console.log(`[DEBUG] 新しい並列生成フローを使用します`);
+    /**
+     * 
+     *  並列生成フロー: 文章と画像を段階的に生成
+     * 
+     */
 
-    // ステップ1: 質問内容に最適な専門家エージェントを選択
+    // 質問内容に最適な専門家エージェントを選択
     console.log(`[DEBUG] ステップ1: エージェントを選択中...`);
     const { agentId, reason: selectionReason } = await decideAgent(question, history);
     console.log(`[DEBUG] 選択されたエージェント: ${agentId}, 理由: ${selectionReason}`);
 
-    // ステップ2: 選択されたエージェントが説明文を生成
+    // 選択されたエージェントが説明文を生成
     console.log(`[DEBUG] ステップ2: ${agentId}のエキスパート回答を生成中...`);
     const responseData = await generateExpertResponse(agentId, question, history, style);
     console.log(`[DEBUG] 生成されたテキスト: ${responseData.text.slice(0, 50)}...`);
 
-    // ステップ3: 説明文を文章-画像ペアの配列に変換
+    // 説明文を文章-画像ペアの配列に変換
     const pairs = createSentenceImagePairs(responseData.steps || []);
     console.log(`[DEBUG] ${pairs.length}個の文章-画像ペアを作成しました`);
 
     // ステップ4: 最初のペアの画像と音声を並列生成（残りは後でクライアント側から要求）
     if (pairs.length > 0) {
       pairs[0].status = 'generating';
-      console.log(`[DEBUG] ステップ4: 最初のペアの画像と音声を並列生成中...`);
+      console.log(`[DEBUG]最初のペアの画像と音声を並列生成中...`);
       
       try {
-        // 画像と音声を並列生成してレスポンス時間を短縮
+
+        /**
+         * 
+         * 画像と音声を並列生成してレスポンス時間を短縮
+         * 
+         */
         const [imageUrl, audioData] = await Promise.all([
+          // 1つ目のペアは並列で処理をしていく
           generateIllustration(pairs[0].visualDescription),
           generateSpeech(pairs[0].text)
         ]);
@@ -508,38 +517,34 @@ export async function generateNextImageAction(
  * 音声再生を早く開始でき、画像は音声再生中に表示される。
  * レート制限を避けるため、並列ではなく順次実行する。
  */
-export async function generateNextPairAction(
+export async function generateNextPairAudioAction(
   pairId: string,
   text: string,
-  visualDescription: string
-): Promise<{ audioData: string | null; imageUrl: string | null; status: 'ready' | 'error' }> {
-  console.log(`[PairGen] ${pairId}: 音声+画像の生成を開始`);
-
-  // 1. まずTTSを生成（優先）
-  let audioData: string | null = null;
+): Promise<string | null> {
+  console.log(`[PairGen] ${pairId}: 音声生成を開始`);
   try {
-    audioData = await generateSpeech(text);
+    const audioData = await generateSpeech(text);
     console.log(`[PairGen] ${pairId}: 音声生成 ${audioData ? '成功' : '失敗'}`);
+    return audioData;
   } catch (error) {
     console.error(`[PairGen] ${pairId}: 音声生成エラー:`, error);
+    return null;
   }
+}
 
-  // TTS→画像の間にクールダウン（レート制限回避）
-  await new Promise(resolve => setTimeout(resolve, 3000));
-
-  // 2. 次に画像を生成
-  let imageUrl: string | null = null;
-  let status: 'ready' | 'error' = 'error';
+export async function generateNextPairImageAction(
+  pairId: string,
+  visualDescription: string,
+): Promise<{ imageUrl: string | null; status: 'ready' | 'error' }> {
+  console.log(`[PairGen] ${pairId}: 画像生成を開始`);
   try {
     const result = await generateIllustration(visualDescription);
     if (result) {
-      imageUrl = result;
-      status = 'ready';
       console.log(`[PairGen] ${pairId}: 画像生成成功`);
+      return { imageUrl: result, status: 'ready' };
     }
   } catch (error) {
     console.error(`[PairGen] ${pairId}: 画像生成エラー:`, error);
   }
-
-  return { audioData, imageUrl, status };
+  return { imageUrl: null, status: 'error' };
 }
