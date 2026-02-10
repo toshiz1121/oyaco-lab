@@ -1,14 +1,15 @@
 /**
  * Firebase Admin SDK 初期化（サーバーサイド専用）
  *
- * Cloud Run環境:
- * - FIREBASE_SERVICE_ACCOUNT_JSON: Secret Managerから環境変数としてマウント（推奨）
- * - FIREBASE_SERVICE_ACCOUNT_BASE64: Base64エンコードされたサービスアカウント
+ * プロジェクト統一構成:
+ * - FirebaseとCloud Runが同じGCPプロジェクト (zenn202602) で動作
+ * - Application Default Credentials (ADC) を使用
+ * - サービスアカウントキー不要
  *
  * クライアント用の firebase/config.ts とは別物。混同しないこと。
  */
 
-import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
+import { initializeApp, getApps, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
 let _adminApp: App | null = null;
@@ -27,27 +28,20 @@ function getAdminApp(): App {
 
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 
                     process.env.FIREBASE_PROJECT_ID || 
-                    'kids-kikkake-lab';
+                    'zenn202602';
 
   try {
-    // Cloud Run - JSON文字列として直接設定（Secret Manager経由、推奨）
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-      _adminApp = initializeApp({
-        credential: cert(serviceAccount),
-        projectId,
-      });
-      console.log(`[Firebase Admin] Initialized with JSON service account`);
-      return _adminApp;
-    }
-
-    // フォールバック: 同一プロジェクトの場合のみ動作
-    console.warn('[Firebase Admin] No service account configured. Using default credentials (same project only)');
-    _adminApp = initializeApp({ projectId });
+    // Application Default Credentials (ADC) を使用
+    // Cloud Run環境では自動的に認証される
+    _adminApp = initializeApp({
+      projectId,
+    });
+    
+    console.log(`[Firebase Admin] Initialized with projectId: ${projectId} (ADC)`);
     
   } catch (error) {
     console.error('[Firebase Admin] Initialization failed:', error);
-    throw new Error('Firebase Admin SDK initialization failed. Please check service account configuration.');
+    throw new Error('Firebase Admin SDK initialization failed.');
   }
 
   return _adminApp;

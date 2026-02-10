@@ -15,12 +15,12 @@
 export function FirebaseConfigScript() {
   // ハードコードされた設定値（Cloud Consoleデプロイ用の一時的な解決策）
   const hardcodedConfig = {
-    apiKey: "AIzaSyC_GUeQP1uItb5Mc4LPTR1of4PGq-ApiyI",
-    authDomain: "kids-kikkake-lab.firebaseapp.com",
-    projectId: "kids-kikkake-lab",
-    storageBucket: "kids-kikkake-lab.firebasestorage.app",
-    messagingSenderId: "245489518285",
-    appId: "1:245489518285:web:fc18538649d087c9840b84",
+    apiKey: "AIzaSyBGmMNP2qT9Hjn5NclTL0GMdzCJOLTRLdw",
+    authDomain: "zenn202602.firebaseapp.com",
+    projectId: "zenn202602",
+    storageBucket: "zenn202602.firebasestorage.app",
+    messagingSenderId: "572758467709",
+    appId: "1:572758467709:web:dbbad2ad786a8cc19e3d14",
   };
   
   // 環境変数があればそれを使用、なければハードコード値を使用
