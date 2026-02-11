@@ -8,7 +8,7 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-import { auth } from "@/lib/firebase/config";
+import { auth, getFirebaseAuth } from "@/lib/firebase/config";
 import { getParentUser, createParentUser, updateActiveChild, addChildToParent } from "@/lib/firebase/auth";
 import { createChildProfile } from "@/lib/firebase/firestore";
 
@@ -36,25 +36,33 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
 
     // 認証状態の監視
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async(firebaseUser) => {
+        // Firebase auth が初期化可能か確認
+        let firebaseAuth;
+        try {
+            firebaseAuth = getFirebaseAuth();
+        } catch (error) {
+            console.error('[AuthContext] Firebase auth is not initialized:', error);
+            setLoading(false);
+            return;
+        }
+        const unsubscribe = onAuthStateChanged(firebaseAuth, async(firebaseUser) => {
             console.log('[AuthContext] Auth state changed:', firebaseUser ? `User: ${firebaseUser.uid}` : 'No user');
             setUser(firebaseUser);
             if(firebaseUser) {
                 setParentUserId(firebaseUser.uid);
 
                 // 親のユーザー情報を取得
-                const parentUser = await getParentUser(firebaseUser.uid);
+                try {
+                    const parentUser = await getParentUser(firebaseUser.uid);
 
-                if(parentUser) {
-                    console.log('[AuthContext] Parent user loaded:', {
-                        userId: parentUser.userId,
-                        children: parentUser.children,
-                        activeChildId: parentUser.activeChildId
-                    });
-                    setChildrenIds(parentUser.children);
-                    setActiveChildId(parentUser.activeChildId || null);
-                } else {
-                    console.warn('[AuthContext] Parent user not found in Firestore');
+                    if(parentUser) {
+                        setChildrenIds(parentUser.children);
+                        setActiveChildId(parentUser.activeChildId || null);
+                    } else {
+                        console.warn('[AuthContext] Parent user not found in Firestore');
+                    }
+                } catch (error) {
+                    console.error('[AuthContext] Failed to fetch parent user:', error);
                 }
             } else {
                 setParentUserId(null);
@@ -74,30 +82,45 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
         });
 
         try {
+            console.log('[AuthContext] Starting Google sign-in...');
+            
             // Googleでログインした認証情報を取得する
             const result = await signInWithPopup(auth, provider);
             const firebaseUser = result.user;
+            console.log('[AuthContext] Google sign-in successful:', firebaseUser.uid);
 
             // データベースから親情報を取得する
-            let parentUser = await getParentUser(firebaseUser.uid);
+            console.log('[AuthContext] Fetching parent user from Firestore...');
+            try {
+                let parentUser = await getParentUser(firebaseUser.uid);
 
-            // 親情報がない場合は、データベースに作成する
-            if(!parentUser) {
-                parentUser = await createParentUser({
-                    userId: firebaseUser.uid,
-                    email: firebaseUser.email!,
-                    displayName: firebaseUser.displayName || 'ユーザー',
-                    photoURL: firebaseUser.photoURL || undefined,
-                });
+                // 親情報がない場合は、データベースに作成する
+                if(!parentUser) {
+                    console.log('[AuthContext] Parent user not found, creating new...');
+                    parentUser = await createParentUser({
+                        userId: firebaseUser.uid,
+                        email: firebaseUser.email!,
+                        displayName: firebaseUser.displayName || 'ユーザー',
+                        photoURL: firebaseUser.photoURL || undefined,
+                    });
+                    console.log('[AuthContext] Parent user created successfully');
+                } else {
+                    console.log('[AuthContext] Parent user found:', parentUser.userId);
+                }
+
+                // 親ユーザー情報にセットされている子供の情報をセットする
+                setChildrenIds(parentUser.children);
+
+                // アクティブな子供のIDをセットする
+                setActiveChildId(parentUser.activeChildId || null);
+            } catch (firestoreError) {
+                console.error('[AuthContext] Firestore operation failed during sign-in:', firestoreError);
+                // Firestoreエラーでもログイン自体は成功させる
             }
-
-            // 親ユーザー情報にセットされている子供の情報をセットする
-            setChildrenIds(parentUser.children);
-
-            // アクティブな子供のIDをセットする
-            setActiveChildId(parentUser.activeChildId || null);
+            
+            console.log('[AuthContext] Sign-in complete');
         } catch (error) {
-            console.error(error);
+            console.error('[AuthContext] ログイン失敗：', error);
             throw error;
         }
     };

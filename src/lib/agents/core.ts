@@ -170,20 +170,35 @@ ${agent.persona}
 ${styleInstruction ? `6. ${styleInstruction}` : ''}
 
 ### 解説の指針（起承転結）
-解説は以下の「起・承・転・結」の流れを意識し、2〜4ステップに集約してください。
+解説は以下の「起・承・転・結」の流れに従い、必ず4ステップで構成してください。ステップ数は必ず4つにしてください。3つ以下や5つ以上は不可です。
 1.【起】質問を褒め、身近なものに例えて全体像を伝える（導入）
 2.【承】その例えを使って、仕組みや理由を具体的に広げる（展開）
 3.【転】「もし〜がなかったら？」や「実はこうなんだよ」という驚きや視点の変化を与える（深掘り）
 4.【結】まとめと、子供の未来や好奇心につながる励まし（結論）
 
-### JSON形式
+### JSON形式（必ず4ステップ）
 {
   "text": "回答全体の要約。博士が自分の口調で優しく語りかける100文字程度のまとめ。",
   "steps": [
     {
       "stepNumber": 1,
-      "text": "ステップ1の説明文（必ず自分の口調で、独立した完結文）",
-      "visualDescription": "Detailed English prompt for image generation reflecting this step's scene."
+      "text": "【起】ステップ1の説明文（必ず自分の口調で、独立した完結文）",
+      "visualDescription": "Detailed English prompt for image generation reflecting this step's scene. Include specific visual elements, characters, and setting."
+    },
+    {
+      "stepNumber": 2,
+      "text": "【承】ステップ2の説明文（必ず自分の口調で、独立した完結文）",
+      "visualDescription": "Detailed English prompt for image generation reflecting this step's scene. Include specific visual elements, characters, and setting."
+    },
+    {
+      "stepNumber": 3,
+      "text": "【転】ステップ3の説明文（必ず自分の口調で、独立した完結文）",
+      "visualDescription": "Detailed English prompt for image generation reflecting this step's scene. Include specific visual elements, characters, and setting."
+    },
+    {
+      "stepNumber": 4,
+      "text": "【結】ステップ4の説明文（必ず自分の口調で、独立した完結文）",
+      "visualDescription": "Detailed English prompt for image generation reflecting this step's scene. Include specific visual elements, characters, and setting."
     }
   ]
 }
@@ -274,6 +289,7 @@ ${stepsText}
 - 問題なければ approved: true にして、簡単なコメントを feedback に書いてください
 - 修正が必要なら approved: false にして、修正版を revisedSteps に書いてください
   - 修正版は元の博士（${expert.nameJa}）の口調を維持してください
+  - 修正版も必ず4ステップで構成してください（起承転結）
   - visualDescription は変更しないでください
 
 # JSON形式で回答

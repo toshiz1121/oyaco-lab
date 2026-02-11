@@ -353,38 +353,50 @@ function ParallelResultView({ response, agent, onStartListening, isListening, qu
 
         {/* メインコンテンツ */}
         <div className="flex-1 px-2 sm:px-3 md:px-4 flex flex-col items-center overflow-y-auto pb-4">
-          {/* 画像表示 */}
+          {/* 4パネル結合画像表示 */}
           <motion.div
-            key={currentIndex}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            className="w-full max-w-[95%] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] aspect-square sm:aspect-[4/3] bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 sm:border-3 border-slate-200 p-0.5 sm:p-1 overflow-hidden"
+            className="w-full max-w-[95%] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] aspect-square sm:aspect-[4/3] bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 sm:border-3 border-slate-200 p-0.5 sm:p-1 overflow-hidden relative"
           >
-            {currentPair.status === 'ready' && currentPair.imageUrl && (
-              <img
-                src={currentPair.imageUrl}
-                alt={`ステップ ${currentPair.stepNumber}`}
-                className="w-full h-full object-contain rounded-xl"
-              />
-            )}
-            {currentPair.status === 'generating' && (
+            {response.combinedImageUrl ? (
+              <>
+                <img
+                  src={response.combinedImageUrl}
+                  alt="4パネル解説イラスト"
+                  className="w-full h-full object-contain rounded-xl"
+                />
+                {/* 現在のパネルをハイライトするオーバーレイ */}
+                <div className="absolute inset-0.5 sm:inset-1 grid grid-cols-2 grid-rows-2 rounded-xl pointer-events-none">
+                  {[0, 1, 2, 3].map((i) => (
+                    <motion.div
+                      key={i}
+                      className={`border-2 sm:border-3 rounded-sm transition-all duration-300 ${
+                        i === currentIndex
+                          ? 'border-blue-500 bg-transparent shadow-[inset_0_0_0_2px_rgba(59,130,246,0.3)]'
+                          : 'border-transparent bg-black/30'
+                      }`}
+                      animate={i === currentIndex ? { opacity: 1 } : { opacity: 1 }}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : currentPair.status === 'generating' ? (
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-center">
                   <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-blue-500 mx-auto mb-2 sm:mb-3" />
                   <p className="text-xs sm:text-sm text-slate-500">えをかいているよ...</p>
                 </div>
               </div>
-            )}
-            {currentPair.status === 'error' && (
+            ) : currentPair.status === 'error' ? (
               <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-lg sm:rounded-xl">
                 <div className="text-center">
                   <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">🖼️</div>
                   <p className="text-xs sm:text-sm text-slate-500">画像を読み込めませんでした</p>
                 </div>
               </div>
-            )}
-            {currentPair.status === 'pending' && (
+            ) : (
               <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-lg sm:rounded-xl">
                 <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-slate-300" />
               </div>

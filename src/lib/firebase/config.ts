@@ -6,7 +6,7 @@
  */
 
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, Firestore, connectFirestoreEmulator, memoryLocalCache } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirebaseConfig } from './runtime-config';
@@ -48,11 +48,36 @@ function initializeFirebase() {
       console.log('[Firebase] Using existing instance');
     }
 
-    _db = getFirestore(_app);
+    // Firestoreを初期化（メモリキャッシュを使用してオフライン問題を回避）
+    const firestoreDbName = process.env.NEXT_PUBLIC_FIRESTORE_DB_NAME || '(default)';
+    try {
+      _db = initializeFirestore(_app, {
+        localCache: memoryLocalCache(),
+      }, firestoreDbName);
+    } catch {
+      // HMR等で既に初期化済みの場合はgetFirestoreでフォールバック
+      _db = getFirestore(_app, firestoreDbName);
+    }
+    console.log('[Firebase] Firestore initialized');
+    
+    // エミュレータ接続の確認（開発環境のみ）
+    if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+      console.log('[Firebase] Connecting to Firestore emulator...');
+      connectFirestoreEmulator(_db, 'localhost', 8080);
+    }
+    
     _storage = getStorage(_app);
+    console.log('[Firebase] Storage initialized');
+    
     _auth = getAuth(_app);
+    console.log('[Firebase] Auth initialized');
   } catch (error) {
     console.error('[Firebase] Initialization failed:', error);
+    // 初期化失敗時にキャッシュをリセット
+    _app = null;
+    _db = null;
+    _storage = null;
+    _auth = null;
     throw error;
   }
 }
@@ -92,25 +117,25 @@ export function getFirebaseAuth(): Auth {
 
 // 後方互換性のため、プロパティアクセスで遅延初期化
 export const app = new Proxy({} as FirebaseApp, {
-  get(target, prop) {
+  get(_target, prop) {
     return getFirebaseApp()[prop as keyof FirebaseApp];
   }
 });
 
 export const db = new Proxy({} as Firestore, {
-  get(target, prop) {
+  get(_target, prop) {
     return getFirebaseDb()[prop as keyof Firestore];
   }
 });
 
 export const storage = new Proxy({} as FirebaseStorage, {
-  get(target, prop) {
+  get(_target, prop) {
     return getFirebaseStorage()[prop as keyof FirebaseStorage];
   }
 });
 
 export const auth = new Proxy({} as Auth, {
-  get(target, prop) {
+  get(_target, prop) {
     return getFirebaseAuth()[prop as keyof Auth];
   }
 });

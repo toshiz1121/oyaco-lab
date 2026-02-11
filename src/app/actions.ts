@@ -127,33 +127,42 @@ export async function generateResponseAction(
     const pairs = createSentenceImagePairs(finalSteps);
     console.log(`[DEBUG] ${pairs.length}個の文章-画像ペアを作成しました`);
 
-    // 最初のペアの画像と音声を並列生成
+    // 4パネル結合画像1枚 + 最初のペアの音声を並列生成
+    let combinedImageUrl: string | undefined;
     if (pairs.length > 0) {
-      pairs[0].status = 'generating';
-      console.log(`[DEBUG] ステップ2: 最初のペアの画像と音声を並列生成中...`);
+      console.log(`[DEBUG] ステップ3: 4パネル結合画像 + 最初のペアの音声を並列生成中...`);
+      pairs.forEach(p => p.status = 'generating');
       
       try {
+        const combinedPrompt = generateCombinedImagePrompt(finalSteps);
+        console.log(`[DEBUG] 結合画像プロンプト: ${combinedPrompt.slice(0, 100)}...`);
+
         const [imageUrl, audioData] = await Promise.all([
-          generateIllustration(pairs[0].visualDescription),
+          generateIllustration(combinedPrompt),
           generateSpeech(pairs[0].text)
         ]);
         
         if (imageUrl) {
-          pairs[0].imageUrl = imageUrl;
-          pairs[0].status = 'ready';
-          pairs[0].generatedAt = new Date();
-          console.log(`[DEBUG] 最初のペアの画像生成に成功しました`);
+          combinedImageUrl = imageUrl;
+          // 全ペアに同じ結合画像URLを設定（UIの互換性のため）
+          pairs.forEach(p => {
+            p.imageUrl = imageUrl;
+            p.status = 'ready';
+            p.generatedAt = new Date();
+          });
+          console.log(`[DEBUG] 4パネル結合画像の生成に成功しました`);
         } else {
-          pairs[0].status = 'error';
-          console.error(`[ERROR] 最初のペアの画像生成がnullを返しました`);
+          pairs.forEach(p => p.status = 'error');
+          console.error(`[ERROR] 結合画像の生成がnullを返しました`);
         }
         
+        // 最初のペアの音声データを設定
         pairs[0].audioData = audioData;
         console.log(`[DEBUG] 最初のペアの音声: ${audioData ? '生成成功' : '失敗（フォールバックを使用）'}`);
         
       } catch (error) {
-        console.error('[ERROR] 最初のペアの生成に失敗しました:', error);
-        pairs[0].status = 'error';
+        console.error('[ERROR] 結合画像・音声の生成に失敗しました:', error);
+        pairs.forEach(p => { if (p.status === 'generating') p.status = 'error'; });
       }
     }
 
@@ -173,6 +182,7 @@ export async function generateResponseAction(
       agentId,
       text: finalText,
       pairs,
+      combinedImageUrl,
       audioUrl: undefined,
       isThinking: false,
       useParallelGeneration: true,
@@ -294,32 +304,38 @@ export async function consultAction(
     const pairs = createSentenceImagePairs(responseData.steps || []);
     console.log(`[DEBUG] ${pairs.length}個の文章-画像ペアを作成しました`);
 
-    // ステップ4: 最初のペアの画像と音声を並列生成（残りは後でクライアント側から要求）
+    // ステップ4: 4パネル結合画像1枚 + 最初のペアの音声を並列生成
+    let combinedImageUrl: string | undefined;
     if (pairs.length > 0) {
-      pairs[0].status = 'generating';
-      console.log(`[DEBUG]最初のペアの画像と音声を並列生成中...`);
+      console.log(`[DEBUG] 4パネル結合画像 + 最初のペアの音声を並列生成中...`);
+      pairs.forEach(p => p.status = 'generating');
       
       try {
 
         /**
          * 
-         * 画像と音声を並列生成してレスポンス時間を短縮
+         * 4パネル結合画像1枚と最初のペアの音声を並列生成してレスポンス時間を短縮
          * 
          */
+        const combinedPrompt = generateCombinedImagePrompt(responseData.steps || []);
+        
         const [imageUrl, audioData] = await Promise.all([
-          // 1つ目のペアは並列で処理をしていく
-          generateIllustration(pairs[0].visualDescription),
+          generateIllustration(combinedPrompt),
           generateSpeech(pairs[0].text)
         ]);
         
         if (imageUrl) {
-          pairs[0].imageUrl = imageUrl;
-          pairs[0].status = 'ready';
-          pairs[0].generatedAt = new Date();
-          console.log(`[DEBUG] 最初のペアの画像生成に成功しました`);
+          combinedImageUrl = imageUrl;
+          // 全ペアに同じ結合画像URLを設定
+          pairs.forEach(p => {
+            p.imageUrl = imageUrl;
+            p.status = 'ready';
+            p.generatedAt = new Date();
+          });
+          console.log(`[DEBUG] 4パネル結合画像の生成に成功しました`);
         } else {
-          pairs[0].status = 'error';
-          console.error(`[ERROR] 最初のペアの画像生成がnullを返しました`);
+          pairs.forEach(p => p.status = 'error');
+          console.error(`[ERROR] 結合画像の生成がnullを返しました`);
         }
         
         // 音声データを設定（nullでも許容、クライアント側でフォールバック）
@@ -327,8 +343,8 @@ export async function consultAction(
         console.log(`[DEBUG] 最初のペアの音声: ${audioData ? '生成成功' : '失敗（フォールバックを使用）'}`);
         
       } catch (error) {
-        console.error('[ERROR] 最初のペアの生成に失敗しました:', error);
-        pairs[0].status = 'error';
+        console.error('[ERROR] 結合画像・音声の生成に失敗しました:', error);
+        pairs.forEach(p => { if (p.status === 'generating') p.status = 'error'; });
       }
     }
 
@@ -337,6 +353,7 @@ export async function consultAction(
       agentId,
       text: responseData.text,
       pairs,
+      combinedImageUrl,
       audioUrl: undefined,
       isThinking: false,
       selectionReason,
