@@ -20,7 +20,7 @@ export function MicButton({ isListening, onClick, className = "", size = "lg" }:
       <Button
         size="lg"
         className={`rounded-full shadow-2xl border-3 sm:border-4 transition-all duration-300 relative overflow-hidden ${
-          isLarge ? "h-16 w-16 sm:h-20 sm:w-20 md:h-28 md:w-28" : "h-12 w-12 sm:h-14 sm:w-14 md:h-20 md:w-20"
+          isLarge ? "h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28" : "h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20"
         } ${
           isListening 
             ? "bg-gradient-to-br from-red-400 to-pink-500 hover:from-red-500 hover:to-pink-600 border-red-300 animate-pulse" 
@@ -56,7 +56,7 @@ export function MicButton({ isListening, onClick, className = "", size = "lg" }:
             repeat: isListening ? Infinity : 0,
           }}
         >
-          <Mic className={`${isLarge ? "h-7 w-7 sm:h-8 sm:w-8 md:h-12 md:w-12" : "h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8"} text-white drop-shadow-lg relative z-10`} />
+          <Mic className={`${isLarge ? "h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12" : "h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8"} text-white drop-shadow-lg relative z-10`} />
         </motion.div>
 
         {/* リスニング時の波紋エフェクト */}

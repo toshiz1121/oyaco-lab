@@ -5,15 +5,17 @@ export const dynamic = 'force-dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 
 export default function LoginPage() {
-    const {user, signInWithGoogle, loading} = useAuth();
+    const {user, signInWithGoogle, signOut, loading} = useAuth();
     const router = useRouter();
     const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     useEffect(() => {
         if(user && !loading) {
-            console.log('子供選択画面に遷移するよ');
             router.push('/select-child');
         }
     }, [user, loading, router]);
@@ -30,6 +32,18 @@ export default function LoginPage() {
         }
     }
 
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        try {
+            await signOut();
+            router.push('/login');
+        } catch (error) {
+            console.error('ログアウト失敗：', error);
+        } finally {
+            setIsLoggingOut(false);
+        }
+    }
+
     if(loading) {
         return (
             <div className='min-h-screen flex items-center justify-center'>
@@ -39,8 +53,31 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-            <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+        <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-white">
+            {/* ヘッダー - ログイン済みの場合のみ表示 */}
+            {user && (
+                <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-sky-200 px-4 py-3">
+                    <div className="max-w-6xl mx-auto flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-sky-600">🔬 キッズサイエンスラボ</span>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleLogout}
+                            disabled={isLoggingOut}
+                            className="gap-2"
+                        >
+                            <LogOut className="h-4 w-4" />
+                            {isLoggingOut ? 'ログアウト中...' : 'ログアウト'}
+                        </Button>
+                    </div>
+                </header>
+            )}
+
+            {/* メインコンテンツ */}
+            <div className="flex-1 flex items-center justify-center px-4">
+                <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
                 <div className="text-center mb-8">
                 <div className="text-6xl mb-4">🔬</div>
                 <h1 className="text-3xl font-bold mb-2">
@@ -66,7 +103,8 @@ export default function LoginPage() {
                 </button>
 
                 <div className="mt-6 text-center text-sm text-gray-500">
-                <p>ログインすることで、利用規約とプライバシーポリシーに同意したものとみなされます</p>
+                    <p>ログインすることで、利用規約とプライバシーポリシーに同意したものとみなされます</p>
+                </div>
                 </div>
             </div>
         </div>

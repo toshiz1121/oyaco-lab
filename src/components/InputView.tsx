@@ -1,7 +1,19 @@
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { MicButton } from "./MicButton";
-import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useMemo, useState, useEffect } from "react";
+import {
+  Telescope,
+  Atom,
+  Rocket,
+  Bug,
+  Star,
+  Rainbow,
+  FlaskConical,
+  Magnet,
+  Flower2,
+  PawPrint,
+  Lightbulb,
+} from "lucide-react";
 
 interface InputViewProps {
   onStartListening: () => void;
@@ -10,167 +22,188 @@ interface InputViewProps {
   agentAvatar: string;
 }
 
+const TIPS = [
+  "「なんで そらは あおいの？」",
+  "「おほしさま って なに？」",
+  "「きょうりゅう は なぜ いなくなったの？」",
+  "「にじ は どうして できるの？」",
+  "「おつきさま は なぜ ひかるの？」",
+  "「でんき って なに？」",
+  "「かみなり は なぜ なるの？」",
+];
+
+const LUCIDE_ICONS = [
+  { Icon: FlaskConical, color: "text-purple-300" },
+  { Icon: Atom, color: "text-sky-300" },
+  { Icon: Rocket, color: "text-orange-300" },
+  { Icon: Bug, color: "text-green-300" },
+  { Icon: Star, color: "text-yellow-300" },
+  { Icon: Rainbow, color: "text-pink-300" },
+  { Icon: Telescope, color: "text-indigo-300" },
+  { Icon: Magnet, color: "text-red-300" },
+  { Icon: Flower2, color: "text-rose-300" },
+  { Icon: PawPrint, color: "text-amber-300" },
+];
+
 export function InputView({ onStartListening, isListening, agentName, agentAvatar }: InputViewProps) {
-  // 控えめな装飾（5個に削減）
-  const sparkles = useMemo(() => 
-    [...Array(5)].map((_, i) => ({
+  const [tipIndex, setTipIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % TIPS.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const floatingIcons = useMemo(() =>
+    LUCIDE_ICONS.map((item, i) => ({
       id: i,
-      left: 15 + i * 17.5,
-      top: 10 + (i % 2) * 15,
-      duration: 4 + i * 0.5,
-      delay: i * 0.8,
-      icon: '✨'
+      ...item,
+      left: 3 + (i * 10) % 90,
+      top: 5 + ((i * 31) % 75),
+      duration: 6 + (i % 4) * 1.5,
+      delay: i * 0.5,
     })), []
   );
 
   return (
-    <div className="flex flex-col h-full items-center relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-purple-50/30">
-      {/* 控えめな背景装飾 */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
-        {sparkles.map((sparkle) => (
+    <div className="flex flex-col h-full w-full items-center relative overflow-hidden">
+      {/* 背景 */}
+      <div className="absolute inset-0 bg-gradient-to-b from-sky-100 via-blue-50 to-indigo-50" />
+
+      {/* 浮遊 Lucide アイコン */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {floatingIcons.map((item) => (
           <motion.div
-            key={sparkle.id}
-            className="absolute text-lg sm:text-xl md:text-2xl"
-            style={{
-              left: `${sparkle.left}%`,
-              top: `${sparkle.top}%`,
-            }}
+            key={item.id}
+            className={`absolute ${item.color} opacity-30`}
+            style={{ left: `${item.left}%`, top: `${item.top}%` }}
             animate={{
-              opacity: [0.3, 0.6, 0.3],
-              scale: [0.8, 1, 0.8],
+              y: [0, -18, 0],
+              opacity: [0.15, 0.35, 0.15],
+              rotate: [0, 8, -8, 0],
             }}
             transition={{
-              duration: sparkle.duration,
+              duration: item.duration,
               repeat: Infinity,
-              delay: sparkle.delay,
+              delay: item.delay,
               ease: "easeInOut",
             }}
           >
-            {sparkle.icon}
+            <item.Icon className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10" strokeWidth={1.5} />
           </motion.div>
         ))}
       </div>
 
-      {/* コンテンツ */}
-      <div className="relative z-10 flex flex-col h-full w-full items-center">
-        {/* Top Mode Toggles */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex gap-2 sm:gap-3 md:gap-4 mt-3 sm:mt-4 md:mt-8 px-3"
-        >
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold px-4 sm:px-5 md:px-7 py-1.5 sm:py-2 md:py-2.5 text-xs sm:text-sm md:text-base rounded-full shadow-md cursor-default border-2 border-blue-400"
-          >
-            🎤 おはなしモード
-          </motion.div>
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="bg-gray-200/70 text-gray-500 font-bold px-4 sm:px-5 md:px-7 py-1.5 sm:py-2 md:py-2.5 text-xs sm:text-sm md:text-base rounded-full cursor-not-allowed border-2 border-gray-300"
-          >
-            📚 コンテンツ
-          </motion.div>
-        </motion.div>
+      {/* メインコンテンツ - 中央寄せ、コンパクト */}
+      <div className="relative z-10 flex flex-col h-full w-full items-center justify-center px-4 gap-0">
 
-        {/* Center Character */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 sm:gap-4 md:gap-6 px-4">
+        {/* 博士アバター + 吹き出し + ヒント を一塊に */}
+        <div className="flex flex-col items-center">
+
+          {/* ヒント吹き出し（上） */}
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="relative bg-white/80 backdrop-blur-sm rounded-2xl px-4 py-2 sm:px-5 sm:py-2.5 shadow-sm max-w-[280px] sm:max-w-sm mb-3 sm:mb-4"
+          >
+            <div className="flex items-center gap-1.5 justify-center mb-0.5">
+              <Lightbulb className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
+              <span className="text-[11px] sm:text-xs text-sky-600 font-medium">こんなこと きいてみよう</span>
+            </div>
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={tipIndex}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="text-[13px] sm:text-sm text-sky-900 text-center font-bold"
+              >
+                {TIPS[tipIndex]}
+              </motion.p>
+            </AnimatePresence>
+            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white/80 rotate-45 rounded-[2px]" />
+          </motion.div>
+
+          {/* 博士の吹き出し */}
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{
-              type: "spring",
-              stiffness: 200,
-              damping: 20,
-              delay: 0.2,
-            }}
+            transition={{ type: "spring", stiffness: 300, damping: 25, delay: 0.4 }}
+            className="relative bg-white rounded-2xl sm:rounded-3xl px-5 py-2.5 sm:px-7 sm:py-3 shadow-lg border-2 border-sky-200/50 max-w-[260px] sm:max-w-xs mb-3 sm:mb-4"
+          >
+            <motion.p
+              animate={{ scale: [1, 1.02, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="text-[15px] sm:text-lg md:text-xl font-bold text-sky-800 text-center leading-snug"
+            >
+              {isListening ? "🎤 うんうん、きいてるよ！" : "なんでも きいてね！"}
+            </motion.p>
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-r-2 border-b-2 border-sky-200/50 rounded-[2px]" />
+          </motion.div>
+
+          {/* 博士アバター */}
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.15 }}
             className="relative"
           >
-            {/* 優しい光の輪 */}
             <motion.div
-              className="absolute inset-0 rounded-full bg-blue-200/30 blur-2xl"
-              animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.3, 0.5, 0.3],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
+              className="absolute -inset-3 sm:-inset-5 rounded-full"
+              style={{ background: "radial-gradient(circle, rgba(56,189,248,0.2) 0%, transparent 70%)" }}
+              animate={{ scale: [1, 1.12, 1], opacity: [0.4, 0.7, 0.4] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             />
-            
-            {/* キャラクター */}
             <motion.div
-              animate={{
-                y: [0, -10, 0],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="w-36 h-36 sm:w-48 sm:h-48 md:w-72 md:h-72 lg:w-80 lg:h-80 relative rounded-full overflow-hidden border-4 sm:border-6 md:border-8 border-white shadow-xl bg-white"
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             >
-              <img
-                src={agentAvatar}
-                alt={agentName}
-                className="w-full h-full object-cover drop-shadow-xl"
-              />
+              <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 rounded-full overflow-hidden border-4 border-white shadow-2xl bg-white ring-4 ring-sky-200/40">
+                <img src={agentAvatar} alt={agentName} className="w-full h-full object-cover" />
+              </div>
             </motion.div>
           </motion.div>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+          {/* 博士の名前 */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-700"
+            transition={{ delay: 0.35 }}
+            className="flex items-center gap-1.5 mt-2 sm:mt-3"
           >
-            {agentName}
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-sm sm:text-base md:text-lg text-gray-700 font-medium text-center px-4"
-          >
-            なんでも きいてね！
-          </motion.p>
+            <FlaskConical className="w-4 h-4 sm:w-5 sm:h-5 text-sky-600" />
+            <span className="text-base sm:text-lg md:text-2xl font-bold text-sky-700">{agentName}</span>
+          </motion.div>
         </div>
 
-        {/* Bottom Area - マイクボタン */}
+        {/* マイクボタン */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center relative mb-3 sm:mb-4 md:mb-8 pb-safe"
+          transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 20 }}
+          className="flex flex-col items-center gap-2 sm:gap-3 mt-5 sm:mt-6 md:mt-8 pb-safe"
         >
-          <div className="flex flex-col items-center gap-2 sm:gap-3 md:gap-4">
-            <motion.div
-              animate={{
-                scale: isListening ? [1, 1.05, 1] : 1,
-              }}
-              transition={{
-                duration: 0.8,
-                repeat: isListening ? Infinity : 0,
-              }}
-            >
-              <MicButton
-                isListening={isListening}
-                onClick={onStartListening}
-                size="lg"
-              />
-            </motion.div>
-            
-            <motion.span
-              className="text-lg sm:text-xl md:text-2xl font-bold text-blue-700"
-            >
-              {isListening ? "🎤 はなしてね！" : "👆 しつもんする！"}
-            </motion.span>
-          </div>
+          <motion.div
+            animate={isListening ? { scale: [1, 1.08, 1] } : {}}
+            transition={{ duration: 1, repeat: isListening ? Infinity : 0 }}
+          >
+            <MicButton
+              isListening={isListening}
+              onClick={onStartListening}
+              size="lg"
+            />
+          </motion.div>
+          <motion.span
+            key={isListening ? "listening" : "idle"}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-sm sm:text-base md:text-lg font-bold text-sky-600"
+          >
+            {isListening ? "🎤 はなしてね！" : "👆 ボタンを おしてね！"}
+          </motion.span>
         </motion.div>
       </div>
     </div>
