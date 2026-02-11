@@ -47,6 +47,7 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
         }
         const unsubscribe = onAuthStateChanged(firebaseAuth, async(firebaseUser) => {
             console.log('[AuthContext] Auth state changed:', firebaseUser ? `User: ${firebaseUser.uid}` : 'No user');
+            setLoading(true);
             setUser(firebaseUser);
             if(firebaseUser) {
                 setParentUserId(firebaseUser.uid);
@@ -82,11 +83,16 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
         });
 
         try {
+            setLoading(true);
             
             // Googleでログインした認証情報を取得する
             const result = await signInWithPopup(auth, provider);
             const firebaseUser = result.user;
             console.log('[AuthContext] Google sign-in successful:', firebaseUser.uid);
+
+            // ログイン成功時点で即座にuser/parentUserIdをセット
+            setUser(firebaseUser);
+            setParentUserId(firebaseUser.uid);
 
             // データベースから親情報を取得する
             try {
@@ -116,6 +122,7 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
                 // Firestoreエラーでもログイン自体は成功させる
             }
             
+            setLoading(false);
             console.log('[AuthContext] Sign-in complete');
         } catch (error) {
             console.error('[AuthContext] ログイン失敗：', error);

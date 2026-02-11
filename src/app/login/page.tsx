@@ -13,6 +13,7 @@ export default function LoginPage() {
 
     useEffect(() => {
         if(user && !loading) {
+            console.log('子供選択画面に遷移するよ');
             router.push('/select-child');
         }
     }, [user, loading, router]);

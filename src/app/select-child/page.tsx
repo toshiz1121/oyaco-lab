@@ -9,16 +9,17 @@ import { getChildProfile } from '@/lib/firebase/firestore';
 import { ChildProfile } from '@/lib/firebase/types';
 
 export default function SelectChildPage() {
-    const { parentUserId, childrenIds, selectChild, loading } = useAuth();
+    const { user, parentUserId, childrenIds, selectChild, loading } = useAuth();
     const router = useRouter();
     const [children, setChildren] = useState<ChildProfile[]>([]);
     const [loadingChildren, setLoadingChildren] = useState(true);
 
     useEffect(() => {
-        if(!loading && !parentUserId) {
+        if(!loading && !user) {
+            console.log('[SelectChild] ユーザー未認証、ログイン画面へ');
             router.push('/login');
         }
-    }, [parentUserId, loading, router]);
+    }, [user, loading, router]);
 
     useEffect(() => {
         if(childrenIds.length > 0) {
