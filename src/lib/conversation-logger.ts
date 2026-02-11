@@ -92,7 +92,7 @@ export async function logConversation(params: LogConversationParams): Promise<st
 
           // オプショナルフィールドは値がある場合のみ追加
           if (pair.generatedAt) {
-            scene.imageGeneratedAt = Timestamp.fromDate(pair.generatedAt);
+            scene.imageGeneratedAt = Timestamp.fromDate(new Date(pair.generatedAt));
           }
 
           if (pair.audioData) {

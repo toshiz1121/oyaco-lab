@@ -73,8 +73,6 @@ export function ViewRenderer({
         <ResultView
           response={latestResponse}
           agent={agent}
-          onStartListening={onMicToggle}
-          isListening={isListening}
           question={currentQuestion}
           onFollowUpQuestion={onFollowUpQuestion}
         />

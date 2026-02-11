@@ -82,7 +82,6 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
         });
 
         try {
-            console.log('[AuthContext] Starting Google sign-in...');
             
             // Googleでログインした認証情報を取得する
             const result = await signInWithPopup(auth, provider);
@@ -90,7 +89,6 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
             console.log('[AuthContext] Google sign-in successful:', firebaseUser.uid);
 
             // データベースから親情報を取得する
-            console.log('[AuthContext] Fetching parent user from Firestore...');
             try {
                 let parentUser = await getParentUser(firebaseUser.uid);
 

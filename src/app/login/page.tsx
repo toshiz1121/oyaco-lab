@@ -21,6 +21,7 @@ export default function LoginPage() {
         setIsLoggingIn(true);
         try {
             await signInWithGoogle();
+            router.push('/select-child');
         } catch (error) {
             console.error('ログイン失敗：', error);
         } finally {

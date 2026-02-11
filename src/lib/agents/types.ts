@@ -28,7 +28,7 @@ export interface SentenceImagePair {
   imageUrl: string | null;       // 生成された画像URL（未生成時はnull）
   audioData: string | null;      // Base64エンコードされた音声データ（未生成時はnull）
   status: PairStatus;            // 現在の生成ステータス
-  generatedAt?: Date;            // 画像生成完了時刻
+  generatedAt?: string;           // 画像生成完了時刻（ISO文字列）
 }
 
 /**
