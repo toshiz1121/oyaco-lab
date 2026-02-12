@@ -38,6 +38,7 @@ export const agents: Record<AgentRole, Agent> = {
     color: 'gray',
     expertise: ['質問分析', 'エージェント選択'],
     cannotHandle: [],
+    voiceName: 'Charon', // 落ち着いた男性の声
   },
 
   scientist: {
@@ -54,6 +55,7 @@ export const agents: Record<AgentRole, Agent> = {
     color: 'blue',
     expertise: ['物理', '化学', '科学', '仕組み', '実験', 'エネルギー', '光', '音', '力', '電気', '温度', '天気', '磁石', '重力', '水', '空気', '熱', '虹', '雷'],
     cannotHandle: ['芸術', '美術', '感情', '歴史', '宇宙の起源', '体の健康', 'IT', 'プログラミング'],
+    voiceName: 'Iapetus', // 落ち着いた年配の男性の声
   },
 
   biologist: {
@@ -68,8 +70,9 @@ export const agents: Record<AgentRole, Agent> = {
 得意な質問: 「犬はなぜしっぽを振る？」「なぜ葉っぱは緑？」「恐竜はなぜ絶滅した？」「カブトムシはなぜ強い？」「花はなぜ咲く？」`,
     style: 'Energetic and passionate about nature.',
     color: 'green',
-    expertise: ['動物', '植物', '昆虫', '生き物', '海', '森', '自然', '恐竜', '進化', '生態系', '季節', '花', '魚', '鳥', '虫', 'ペット', '犬', '猫'],
+    expertise: ['動物', '植物', '昆虫', '生き物', '海', '森', '自然', '恐竜', '進化', '生態系', '季節', '花', '魚', '鳥', '虫', 'ペット', '犬', '猫', '蜂蜜'],
     cannotHandle: ['宇宙', '星', '物理法則', '歴史', '芸術', '感情', '体の健康', 'IT'],
+    voiceName: 'Enceladus', // 元気で明るい男性の声
   },
 
   astronomer: {
@@ -86,6 +89,7 @@ export const agents: Record<AgentRole, Agent> = {
     color: 'purple',
     expertise: ['宇宙', '星', '惑星', '月', '太陽', '銀河', 'ブラックホール', 'ロケット', '地球', '火山', '地震', '海流', '天体', '流れ星', '宇宙飛行士', '隕石'],
     cannotHandle: ['化学実験', '動物', '歴史', '芸術', '感情', '体の健康', 'IT'],
+    voiceName: 'Laomedeia', // 穏やかで優しい女性の声
   },
 
   historian: {
@@ -102,6 +106,7 @@ export const agents: Record<AgentRole, Agent> = {
     color: 'amber',
     expertise: ['歴史', '昔', '文化', '発明', '偉人', '国', '社会', 'お金', 'ルール', '伝統', '行事', '戦争', '古代', '世界', '言葉', '文字'],
     cannotHandle: ['物理', '化学', '宇宙', '芸術表現', '生物学', '体の健康', 'IT'],
+    voiceName: 'Sadachbia', // ゆっくりとした穏やかな男性の声
   },
 
   artist: {
@@ -118,6 +123,7 @@ export const agents: Record<AgentRole, Agent> = {
     color: 'pink',
     expertise: ['色', '形', '美術', '音楽', '感情', 'デザイン', '創作', '表現', '絵', 'アート', '夢', '想像力', '気持ち', '好き', '嫌い', '怖い', '楽しい', '悲しい'],
     cannotHandle: ['物理', '化学', '宇宙', '歴史', '生物学', '体の健康', 'IT'],
+    voiceName: 'Sulafat', // 明るく感性豊かな女性の声
   },
 
   engineer: {
@@ -134,6 +140,7 @@ export const agents: Record<AgentRole, Agent> = {
     color: 'cyan',
     expertise: ['コンピューター', 'AI', 'プログラミング', 'ロボット', 'インターネット', 'ゲーム', 'スマホ', 'アプリ', '電子機器', '乗り物', '車', '飛行機', '電車', '機械', '発明', 'テクノロジー', 'IT', 'YouTube', 'SNS'],
     cannotHandle: ['芸術', '感情', '歴史', '宇宙', '生物学', '体の健康'],
+    voiceName: 'Puck', // 元気で早口な男性の声
   },
 
   educator: {
@@ -151,5 +158,6 @@ export const agents: Record<AgentRole, Agent> = {
     color: 'orange',
     expertise: ['教育', '言い換え', '励まし', '生活', '相談', 'マナー', 'ルール', 'からだ', '健康', '食べ物', '睡眠', '病気', '成長', '歯', 'お腹', '運動'],
     cannotHandle: [],
+    voiceName: 'Aoede', // 優しく包容力のある女性の声
   },
 };

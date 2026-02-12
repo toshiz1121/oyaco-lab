@@ -8,6 +8,7 @@ import { getConversationWithScenes, updateConversationFeedback } from '@/lib/fir
 import type { ConversationMetadata, ConversationScene } from '@/lib/firebase/types';
 import { agents } from '@/lib/agents/definitions';
 import type { AgentRole } from '@/lib/agents/types';
+import { getCuriosityTypeName } from '@/lib/curiosity-types';
 import { SceneViewer } from '@/components/parent/SceneViewer';
 import { FeedbackControls } from '@/components/parent/FeedbackControls';
 import { Button } from '@/components/ui/button';
@@ -128,7 +129,7 @@ export default function ConversationDetailPage() {
           </div>
           {conversation.curiosityType && (
             <span className="inline-block mt-2 px-2 py-0.5 bg-sky-50 text-sky-700 text-xs rounded-full">
-              {conversation.curiosityType}
+              {getCuriosityTypeName(conversation.curiosityType)}
             </span>
           )}
         </div>

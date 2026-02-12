@@ -20,6 +20,7 @@ import type {
   UnexploredArea,
 } from './types';
 import type { ConversationMetadata } from '@/lib/firebase/types';
+import { getCuriosityTypeName } from '@/lib/curiosity-types';
 
 // ========================================
 // 全分野の定義（知識ギャップ分析用）
@@ -175,7 +176,7 @@ export async function identifyKnowledgeGaps(
 function buildTopicDistribution(conversations: ConversationMetadata[]): TopicCount[] {
   const counts = new Map<string, number>();
   for (const c of conversations) {
-    const topic = c.curiosityType || '不明';
+    const topic = c.curiosityType ? getCuriosityTypeName(c.curiosityType) : '不明';
     counts.set(topic, (counts.get(topic) || 0) + 1);
   }
 

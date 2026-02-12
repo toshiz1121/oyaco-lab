@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from 'react';
-import { SentenceImagePair, PairStatus } from '@/lib/agents/types';
+import { SentenceImagePair, PairStatus, AgentRole } from '@/lib/agents/types';
 import { generateNextPairAudioAction } from '@/app/actions';
 
 /**
@@ -15,6 +15,7 @@ import { generateNextPairAudioAction } from '@/app/actions';
 export function useBackgroundPairGenerator(
   pairs: SentenceImagePair[],
   currentIndex: number,
+  agentId: AgentRole,
   onPairUpdate: (pairId: string, updates: { audioData?: string | null; imageUrl?: string | null; status?: PairStatus }) => void
 ) {
   const generatingIds = useRef<Set<string>>(new Set());
@@ -42,7 +43,7 @@ export function useBackgroundPairGenerator(
       }
 
       // 音声を生成して即座にコールバック
-      const audioData = await generateNextPairAudioAction(nextPair.id, nextPair.text);
+      const audioData = await generateNextPairAudioAction(nextPair.id, nextPair.text, agentId);
       onPairUpdate(nextPair.id, { audioData });
       console.log(`[PairGen] Audio ready for ${nextPair.id}`);
     })().catch((error) => {

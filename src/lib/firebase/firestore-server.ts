@@ -78,3 +78,102 @@ export async function getConversationsByDateRangeServer(
   
   return conversations;
 }
+
+/**
+ * 新しい会話を作成（サーバーサイド版）
+ */
+export async function createConversationServer(
+  childId: string,
+  conversationId: string,
+  question: string,
+  curiosityType: string,
+  selectedExpert: string,
+  selectionReason?: string
+): Promise<void> {
+  const db = getAdminDb();
+  const metadata = {
+    conversationId,
+    childId,
+    question,
+    questionTimestamp: new Date(),
+    curiosityType,
+    selectedExpert,
+    selectionReason,
+    status: 'in_progress',
+    totalScenes: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  await db
+    .collection('children')
+    .doc(childId)
+    .collection('conversations')
+    .doc(conversationId)
+    .set(metadata);
+
+  console.log(`[Firestore Server] Created conversation: ${conversationId}`);
+}
+
+/**
+ * シーンを一括保存(サーバーサイド版)
+ */
+export async function addScenesBatchServer(
+  childId: string,
+  conversationId: string,
+  scenes: Array<Omit<import('./types').ConversationScene, 'createdAt' | 'imageGeneratedAt'> & { imageGeneratedAt?: Date }>
+): Promise<void> {
+  const db = getAdminDb();
+  const batch = db.batch();
+
+  scenes.forEach((scene) => {
+    const sceneRef = db
+      .collection('children')
+      .doc(childId)
+      .collection('conversations')
+      .doc(conversationId)
+      .collection('scenes')
+      .doc(scene.sceneId);
+
+    batch.set(sceneRef, {
+      ...scene,
+      createdAt: new Date(),
+    });
+  });
+
+  await batch.commit();
+  console.log(`[Firestore Server] Saved ${scenes.length} scenes in batch`);
+}
+
+/**
+ * 会話を完了状態に更新（サーバーサイド版）
+ */
+export async function completeConversationServer(
+  childId: string,
+  conversationId: string,
+  totalScenes: number,
+  durationSeconds: number,
+  agentPipeline?: unknown
+): Promise<void> {
+  const db = getAdminDb();
+  const updates: Record<string, unknown> = {
+    status: 'completed',
+    totalScenes,
+    durationSeconds,
+    completedAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  if (agentPipeline) {
+    updates.agentPipeline = agentPipeline;
+  }
+
+  await db
+    .collection('children')
+    .doc(childId)
+    .collection('conversations')
+    .doc(conversationId)
+    .update(updates);
+
+  console.log(`[Firestore Server] Completed conversation: ${conversationId}`);
+}

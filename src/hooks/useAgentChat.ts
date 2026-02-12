@@ -74,7 +74,11 @@ export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProp
   const [audioProgress, setAudioProgress] = useState(0);
 
   // childId を activeChildId から取得
-  const { logCurrentConversation, isLogging } = useConversationLogger(
+  const { 
+    startCuriosityTypeEstimation,
+    logCurrentConversation, 
+    isLogging 
+  } = useConversationLogger(
     activeChildId || 'child1' // フォールバック
   );
 
@@ -184,6 +188,12 @@ export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProp
         role: 'user',
         content: question
       });
+
+      // 好奇心タイプ判定をバックグラウンドで開始（解説生成と並行実行）
+      if (activeChildId) {
+        console.log('[useAgentChat] Starting curiosity type estimation in background...');
+        startCuriosityTypeEstimation(question);
+      }
 
       // 会話履歴を構築（前の質問+回答のペアを含める）
       const history: { role: string; content: string }[] = [];

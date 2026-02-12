@@ -3,6 +3,7 @@
 import type { ConversationMetadata } from '@/lib/firebase/types';
 import { agents } from '@/lib/agents/definitions';
 import type { AgentRole } from '@/lib/agents/types';
+import { getCuriosityTypeName } from '@/lib/curiosity-types';
 import { Bookmark, Clock, Layers } from 'lucide-react';
 import Link from 'next/link';
 
@@ -51,7 +52,7 @@ export function ConversationCard({ conversation, childId }: ConversationCardProp
         </div>
         {conversation.curiosityType && (
           <span className="inline-block mt-2 px-2 py-0.5 bg-sky-50 text-sky-700 text-xs rounded-full">
-            {conversation.curiosityType}
+            {getCuriosityTypeName(conversation.curiosityType)}
           </span>
         )}
       </div>

@@ -10,6 +10,7 @@ export interface Agent {
   color: string;     // UI theme color
   expertise: string[];    // 得意な分野キーワード
   cannotHandle: string[]; // 専門外の分野キーワード
+  voiceName: string; // Vertex AI TTS voice name (Chirp 3 HD)
 }
 
 export interface ExplanationStep {

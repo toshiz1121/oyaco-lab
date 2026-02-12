@@ -1,8 +1,9 @@
 "use server";
 
 import { decideAgent, generateExpertResponse, generateIllustration, generateCombinedImagePrompt, createSentenceImagePairs, educatorReview, generateFollowUpQuestions, ExplanationStyle } from "@/lib/agents/core";
-import { AgentResponse, AgentRole, AgentPipelineMetadata, FollowUpQuestion } from "@/lib/agents/types";
+import { AgentResponse, AgentRole, AgentPipelineMetadata } from "@/lib/agents/types";
 import { generateSpeech } from "@/lib/vertexai";
+import { agents } from "@/lib/agents/definitions";
 
 // 相談結果の型定義
 export interface ConsultationResult {
@@ -104,7 +105,7 @@ export async function generateResponseAction(
       : Promise.resolve(undefined);
 
     const audioPromise = initialSteps.length > 0
-      ? generateSpeech(initialSteps[0].text)
+      ? generateSpeech(initialSteps[0].text, agents[agentId].voiceName)
       : Promise.resolve(null);
 
     // 全タスクを並列実行
@@ -190,13 +191,14 @@ export async function generateResponseAction(
  * 失敗した場合はnullを返し、クライアント側でWeb Speech APIにフォールバックします。
  * 
  * @param text 読み上げるテキスト
+ * @param agentId エージェントID（音声選択用）
  * @returns Base64エンコードされた音声データ、または失敗時はnull
  */
-export async function generateSpeechAction(text: string): Promise<string | null> {
+export async function generateSpeechAction(text: string, agentId: AgentRole = 'educator'): Promise<string | null> {
   try {
-    console.log(`generateSpeechAction が呼ばれました。テキスト長: ${text.length}`);
-    // Vertex AI TTSで音声を生成（デフォルトボイス: charon）
-    const base64Audio = await generateSpeech(text);
+    console.log(`generateSpeechAction が呼ばれました。テキスト長: ${text.length}, エージェント: ${agentId}`);
+    const voiceName = agents[agentId].voiceName;
+    const base64Audio = await generateSpeech(text, voiceName);
     return base64Audio;
   } catch (error: any) {
     console.error("サーバーアクションでの音声生成に失敗しました:", error);
@@ -278,10 +280,12 @@ export async function generateNextImageAction(
 export async function generateNextPairAudioAction(
   pairId: string,
   text: string,
+  agentId: AgentRole,
 ): Promise<string | null> {
-  console.log(`[PairGen] ${pairId}: 音声生成を開始`);
+  console.log(`[PairGen] ${pairId}: 音声生成を開始 (エージェント: ${agentId})`);
   try {
-    const audioData = await generateSpeech(text);
+    const voiceName = agents[agentId].voiceName;
+    const audioData = await generateSpeech(text, voiceName);
     console.log(`[PairGen] ${pairId}: 音声生成 ${audioData ? '成功' : '失敗'}`);
     return audioData;
   } catch (error) {

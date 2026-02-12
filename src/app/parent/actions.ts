@@ -6,7 +6,7 @@ import {
   getRecentConversationsServer as getRecentConversations,
 } from '@/lib/firebase/firestore-server';
 import { runParentAgent } from '@/lib/agents/parent-agent';
-import type { ParentAgentResult } from '@/lib/agents/parent-agent';
+import type { ParentAgentResult } from '@/lib/agents/parent-agent/types';
 
 // ========================================
 // 会話きっかけ提案

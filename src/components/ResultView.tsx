@@ -40,7 +40,7 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
   }, []);
 
   // バックグラウンドで次のステップの音声を先読み生成
-  useBackgroundPairGenerator(pairs, currentIndex, (pairId, updates) => {
+  useBackgroundPairGenerator(pairs, currentIndex, response.agentId, (pairId, updates) => {
     setPairs(prev => prev.map(p => {
       if (p.id !== pairId) return p;
       return {
@@ -204,7 +204,9 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            className="w-full max-w-[95%] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] aspect-square sm:aspect-[4/3] bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 sm:border-3 border-slate-200 p-0.5 sm:p-1 overflow-hidden relative"
+            className={`w-full sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] aspect-square sm:aspect-[4/3] bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 sm:border-3 border-slate-200 p-0.5 sm:p-1 overflow-hidden relative ${
+              showFollowUp ? 'max-w-[95%]' : 'max-w-full'
+            }`}
           >
             {response.combinedImageUrl ? (
               <>
@@ -246,10 +248,12 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
 
           {/* 博士アバター + 吹き出し */}
           <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-            className="flex items-end gap-2 md:gap-3 w-full max-w-[95%] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] mt-2 sm:mt-3">
+            className={`flex items-end gap-2 md:gap-3 w-full sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] mt-2 sm:mt-3 ${
+              showFollowUp ? 'max-w-[95%]' : 'max-w-full'
+            }`}>
             <div className="flex flex-col items-center shrink-0">
               <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
-                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 md:h-14 md:w-14 border-2 border-blue-400 bg-white shadow-md">
+                <Avatar className="h-15 w-15 sm:h-15 sm:w-15 md:h-20 md:w-20 border-2 border-blue-400 bg-white shadow-md">
                   <AvatarImage src={`/avatars/${response.agentId}.png`} alt={agent.nameJa} />
                   <AvatarFallback>{agent.nameJa[0]}</AvatarFallback>
                 </Avatar>
@@ -257,7 +261,9 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
               <span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-600 mt-0.5">{agent.nameJa}</span>
             </div>
 
-            <div className="flex-1 bg-white rounded-xl sm:rounded-2xl rounded-bl-none p-2.5 sm:p-3 md:p-4 border-2 border-blue-200 shadow-md relative min-h-[60px] sm:min-h-[80px] max-h-[120px] sm:max-h-[160px] md:max-h-[200px] overflow-y-auto">
+            <div className={`flex-1 bg-white rounded-xl sm:rounded-2xl rounded-bl-none p-2.5 sm:p-3 md:p-4 border-2 border-blue-200 shadow-md relative overflow-y-auto ${
+              showFollowUp ? 'min-h-[60px] sm:min-h-[80px] max-h-[120px] sm:max-h-[160px] md:max-h-[200px]' : 'min-h-[80px] sm:min-h-[80px] max-h-[160px] sm:max-h-[160px] md:max-h-[200px]'
+            }`}>
               <p className="text-xs sm:text-sm md:text-base leading-relaxed pr-6 sm:pr-7">{currentPair.text}</p>
 
               {isWaitingForAudio && (
@@ -279,7 +285,7 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
 
           {/* ナビゲーション */}
           <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
-            className="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
+            className="flex gap-2 sm:gap-3 mt-6 sm:mt-4">
             {!isFirst && (
               <Button onClick={handlePrevious} variant="outline" size="default"
                 className="gap-1 sm:gap-1.5 rounded-full px-3 sm:px-4 text-xs sm:text-sm min-h-[40px]">
