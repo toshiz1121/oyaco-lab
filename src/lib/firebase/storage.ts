@@ -38,7 +38,7 @@ export async function uploadConversationImage(
   base64Data: string,
   maxRetries = 2
 ): Promise<string> {
-  const storage = getFirebaseStorage();
+  const storage = await getFirebaseStorage();
   const path = `conversations/${childId}/${conversationId}/combined_image.png`;
   const storageRef = ref(storage, path);
   const blob = base64ToBlob(base64Data);
