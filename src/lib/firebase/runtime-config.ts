@@ -11,7 +11,10 @@ export function getFirebaseConfig() {
     // @ts-ignore - グローバル変数として注入される
     if (window.__FIREBASE_CONFIG__) {
       // @ts-ignore
-      return window.__FIREBASE_CONFIG__;
+      const config = window.__FIREBASE_CONFIG__;
+      console.log('[Firebase Config] Using config from window.__FIREBASE_CONFIG__');
+      console.log('[Firebase Config] Firestore DB Name:', config.firestoreDbName || '(default)');
+      return config;
     }
   }
 
@@ -23,10 +26,23 @@ export function getFirebaseConfig() {
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    firestoreDbName: process.env.NEXT_PUBLIC_FIRESTORE_DB_NAME,
   };
 
-  // 設定値の検証
-  const missingKeys = Object.entries(config)
+  console.log('[Firebase Config] Using config from environment variables');
+  console.log('[Firebase Config] Firestore DB Name:', config.firestoreDbName || '(default)');
+
+  // 設定値の検証（firestoreDbNameは任意なので除外）
+  const requiredConfig = {
+    apiKey: config.apiKey,
+    authDomain: config.authDomain,
+    projectId: config.projectId,
+    storageBucket: config.storageBucket,
+    messagingSenderId: config.messagingSenderId,
+    appId: config.appId,
+  };
+
+  const missingKeys = Object.entries(requiredConfig)
     .filter(([_, value]) => !value)
     .map(([key]) => key);
 

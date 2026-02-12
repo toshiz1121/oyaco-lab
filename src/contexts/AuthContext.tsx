@@ -6,9 +6,10 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  User
+  User,
+  type Auth
 } from 'firebase/auth';
-import { auth, getFirebaseAuth } from "@/lib/firebase/config";
+import { getFirebaseAuth } from "@/lib/firebase/config";
 import { getParentUser, createParentUser, updateActiveChild, addChildToParent } from "@/lib/firebase/auth";
 import { createChildProfile } from "@/lib/firebase/firestore";
 
@@ -37,42 +38,64 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
     // 認証状態の監視
     useEffect(() => {
         // Firebase auth が初期化可能か確認
-        let firebaseAuth;
-        try {
-            firebaseAuth = getFirebaseAuth();
-        } catch (error) {
-            console.error('[AuthContext] Firebase auth is not initialized:', error);
-            setLoading(false);
-            return;
-        }
-        const unsubscribe = onAuthStateChanged(firebaseAuth, async(firebaseUser) => {
-            console.log('[AuthContext] Auth state changed:', firebaseUser ? `User: ${firebaseUser.uid}` : 'No user');
-            setLoading(true);
-            setUser(firebaseUser);
-            if(firebaseUser) {
-                setParentUserId(firebaseUser.uid);
-
-                // 親のユーザー情報を取得
-                try {
-                    const parentUser = await getParentUser(firebaseUser.uid);
-
-                    if(parentUser) {
-                        setChildrenIds(parentUser.children);
-                        setActiveChildId(parentUser.activeChildId || null);
-                    } else {
-                        console.warn('[AuthContext] Parent user not found in Firestore');
-                    }
-                } catch (error) {
-                    console.error('[AuthContext] Failed to fetch parent user:', error);
-                }
-            } else {
-                setParentUserId(null);
-                setActiveChildId(null);
-                setChildrenIds([]);
+        let firebaseAuth: Auth;
+        
+        const initAuth = async () => {
+            try {
+                firebaseAuth = await getFirebaseAuth();
+            } catch (error) {
+                console.error('[AuthContext] Firebase auth is not initialized:', error);
+                setLoading(false);
+                return;
             }
-            setLoading(false);
+            
+            const unsubscribe = onAuthStateChanged(firebaseAuth, async(firebaseUser) => {
+                console.log('[AuthContext] Auth state changed:', firebaseUser ? `User: ${firebaseUser.uid}` : 'No user');
+                setLoading(true);
+                setUser(firebaseUser);
+                if(firebaseUser) {
+                    setParentUserId(firebaseUser.uid);
+
+                    // 親のユーザー情報を取得
+                    try {
+                        const parentUser = await getParentUser(firebaseUser.uid);
+
+                        if(parentUser) {
+                            setChildrenIds(parentUser.children);
+                            setActiveChildId(parentUser.activeChildId || null);
+                        } else {
+                            console.warn('[AuthContext] Parent user not found in Firestore');
+                            // 親ユーザーが存在しない場合は空の状態を設定
+                            setChildrenIds([]);
+                            setActiveChildId(null);
+                        }
+                    } catch (error) {
+                        console.error('[AuthContext] Failed to fetch parent user:', error);
+                        // エラー時も空の状態を設定してUIをブロックしない
+                        setChildrenIds([]);
+                        setActiveChildId(null);
+                    }
+                } else {
+                    setParentUserId(null);
+                    setActiveChildId(null);
+                    setChildrenIds([]);
+                }
+                setLoading(false);
+            });
+            
+            return unsubscribe;
+        };
+        
+        let unsubscribe: (() => void) | undefined;
+        initAuth().then(unsub => {
+            unsubscribe = unsub;
         });
-        return () => unsubscribe();
+        
+        return () => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        };
     },[]);
 
     // Googleログイン
@@ -85,8 +108,11 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
         try {
             setLoading(true);
             
+            // Firebase authを取得
+            const firebaseAuth = await getFirebaseAuth();
+            
             // Googleでログインした認証情報を取得する
-            const result = await signInWithPopup(auth, provider);
+            const result = await signInWithPopup(firebaseAuth, provider);
             const firebaseUser = result.user;
             console.log('[AuthContext] Google sign-in successful:', firebaseUser.uid);
 
@@ -133,7 +159,8 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
     // ログアウト
     const signOut = async () => {
         try {
-            await firebaseSignOut(auth);
+            const firebaseAuth = await getFirebaseAuth();
+            await firebaseSignOut(firebaseAuth);
             setUser(null);
             setParentUserId(null);
             setActiveChildId(null);

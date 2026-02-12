@@ -16,23 +16,52 @@ export interface ParentUser {
 export async function getParentUser(userId: string): Promise<ParentUser | null> {
     try {
         console.log('[Auth] Fetching parent user:', userId);
-        const db = getFirebaseDb();
+        const db = await getFirebaseDb();
         console.log('[Auth] Firestore instance obtained');
         
         const docRef = doc(db, 'parents', userId);
         console.log('[Auth] Document reference created');
         
-        const docSnap = await getDoc(docRef);
-        console.log('[Auth] Document fetch complete, exists:', docSnap.exists());
+        // オフラインエラーを回避するため、タイムアウトとリトライを実装
+        const maxRetries = 3;
+        let lastError: Error | null = null;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`[Auth] Attempt ${attempt}/${maxRetries} to fetch document`);
+                const docSnap = await getDoc(docRef);
+                console.log('[Auth] Document fetch complete, exists:', docSnap.exists());
 
-        if(docSnap.exists()) {
-            const data = docSnap.data() as ParentUser;
-            console.log('[Auth] Parent user data:', { userId: data.userId, children: data.children });
-            return data;
+                if(docSnap.exists()) {
+                    const data = docSnap.data() as ParentUser;
+                    console.log('[Auth] Parent user data:', { userId: data.userId, children: data.children });
+                    return data;
+                }
+
+                console.log('[Auth] Parent user not found');
+                return null;
+            } catch (fetchError: unknown) {
+                lastError = fetchError as Error;
+                const errorMessage = lastError?.message || String(fetchError);
+                console.warn(`[Auth] Attempt ${attempt} failed:`, errorMessage);
+                
+                // オフラインエラーの場合は短い待機後にリトライ
+                if (errorMessage.includes('offline') && attempt < maxRetries) {
+                    console.log(`[Auth] Retrying in ${attempt * 500}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, attempt * 500));
+                    continue;
+                }
+                
+                // その他のエラーは即座にスロー
+                if (!errorMessage.includes('offline')) {
+                    throw fetchError;
+                }
+            }
         }
-
-        console.log('[Auth] Parent user not found');
-        return null;
+        
+        // 全てのリトライが失敗した場合
+        console.error('[Auth] All retry attempts failed');
+        throw lastError || new Error('Failed to fetch parent user after retries');
     } catch (error) {
         console.error('[Auth] Error fetching parent user:', error);
         throw error;
@@ -43,7 +72,7 @@ export async function getParentUser(userId: string): Promise<ParentUser | null> 
 export async function createParentUser(data: {userId: string; email: string; displayName: string; photoURL?: string;}): Promise<ParentUser> {
     try {
         console.log('[Auth] Creating parent user:', data.userId);
-        const db = getFirebaseDb();
+        const db = await getFirebaseDb();
         
         // 親ユーザーのデータを整理
         const parentUser: ParentUser = {
@@ -65,7 +94,7 @@ export async function createParentUser(data: {userId: string; email: string; dis
 
 // 最終ログイン時刻を更新
 export async function updateLastLogin(userId: string): Promise<void> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const docRef = doc(db, 'parents', userId);
   await updateDoc(docRef, {
     lastLoginAt: Timestamp.now(),
@@ -74,7 +103,7 @@ export async function updateLastLogin(userId: string): Promise<void> {
 
 // アクティブな子供を更新
 export async function updateActiveChild(userId: string, childId: string) {
-    const db = getFirebaseDb();
+    const db = await getFirebaseDb();
     const docRef = doc(db, 'parents', userId);
     await updateDoc(docRef, {
         activeChildId: childId,
@@ -90,7 +119,7 @@ export async function addChildToParent(
   parentUserId: string,
   childId: string
 ): Promise<void> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const userRef = doc(db, 'parents', parentUserId);
   const userSnap = await getDoc(userRef);
 
