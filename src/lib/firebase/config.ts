@@ -6,7 +6,7 @@
  */
 
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { initializeFirestore, getFirestore, Firestore, connectFirestoreEmulator, memoryLocalCache } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, Firestore, memoryLocalCache } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirebaseConfig } from './runtime-config';
@@ -49,22 +49,16 @@ function initializeFirebase() {
     }
 
     // Firestoreを初期化（メモリキャッシュを使用してオフライン問題を回避）
-    const firestoreDbName = process.env.NEXT_PUBLIC_FIRESTORE_DB_NAME || '(default)';
+    const firestoreDbName = process.env.NEXT_PUBLIC_FIRESTORE_DB_NAME;
     try {
-      _db = initializeFirestore(_app, {
-        localCache: memoryLocalCache(),
-      }, firestoreDbName);
+      _db = firestoreDbName 
+        ? initializeFirestore(_app, { localCache: memoryLocalCache() }, firestoreDbName)
+        : initializeFirestore(_app, { localCache: memoryLocalCache() });
     } catch {
       // HMR等で既に初期化済みの場合はgetFirestoreでフォールバック
-      _db = getFirestore(_app, firestoreDbName);
+      _db = firestoreDbName ? getFirestore(_app, firestoreDbName) : getFirestore(_app);
     }
     console.log('[Firebase] Firestore initialized');
-    
-    // エミュレータ接続の確認（開発環境のみ）
-    if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-      console.log('[Firebase] Connecting to Firestore emulator...');
-      connectFirestoreEmulator(_db, 'localhost', 8080);
-    }
     
     _storage = getStorage(_app);
     console.log('[Firebase] Storage initialized');
