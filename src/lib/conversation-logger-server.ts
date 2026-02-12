@@ -124,7 +124,7 @@ export async function estimateCuriosityTypeServer(question: string): Promise<str
     return `ID: ${t.id}
 名前: ${t.name}
 概念: ${t.concept}
-質問パターン: ${t.questionPattern}
+判定ルール: ${t.judgmentRule}
 キーワード: ${t.keywords.join('、')}`;
   }).join('\n\n');
 
