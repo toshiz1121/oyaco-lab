@@ -74,7 +74,11 @@ export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProp
   const [audioProgress, setAudioProgress] = useState(0);
 
   // childId を activeChildId から取得
-  const { logCurrentConversation, isLogging } = useConversationLogger(
+  const { 
+    startCuriosityTypeEstimation,
+    logCurrentConversation, 
+    isLogging 
+  } = useConversationLogger(
     activeChildId || 'child1' // フォールバック
   );
 
@@ -185,10 +189,21 @@ export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProp
         content: question
       });
 
-      // 会話履歴を構築（直前の応答のみを含める）
-      const history = latestResponse ? [
-        { role: 'assistant', content: latestResponse.text }
-      ] : [];
+      // 好奇心タイプ判定をバックグラウンドで開始（解説生成と並行実行）
+      if (activeChildId) {
+        console.log('[useAgentChat] Starting curiosity type estimation in background...');
+        startCuriosityTypeEstimation(question);
+      }
+
+      // 会話履歴を構築（前の質問+回答のペアを含める）
+      const history: { role: string; content: string }[] = [];
+      if (latestResponse) {
+        // 前回の質問も含めて会話の流れを維持
+        if (currentQuestion && currentQuestion !== question) {
+          history.push({ role: 'user', content: currentQuestion });
+        }
+        history.push({ role: 'assistant', content: latestResponse.text });
+      }
 
       // ========================================
       // フェーズ1: エキスパート選定

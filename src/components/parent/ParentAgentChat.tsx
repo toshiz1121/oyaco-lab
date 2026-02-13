@@ -20,7 +20,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { askParentAgent } from '@/app/parent/actions';
-import type { ParentAgentResult, AgentStep } from '@/lib/agents/parent-agent';
+import type { ParentAgentResult, AgentStep } from '@/lib/agents/parent-agent/types';
 
 interface ParentAgentChatProps {
   childId: string;

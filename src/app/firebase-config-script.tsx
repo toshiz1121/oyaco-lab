@@ -21,6 +21,7 @@ export function FirebaseConfigScript() {
     storageBucket: "zenn202602.firebasestorage.app",
     messagingSenderId: "572758467709",
     appId: "1:572758467709:web:dbbad2ad786a8cc19e3d14",
+    firestoreDbName: "kidds-kikkake-lab", // 実際のデータベース名を設定
   };
   
   // 環境変数があればそれを使用、なければハードコード値を使用
@@ -31,14 +32,25 @@ export function FirebaseConfigScript() {
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || hardcodedConfig.storageBucket,
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || hardcodedConfig.messagingSenderId,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || hardcodedConfig.appId,
+    firestoreDbName: process.env.NEXT_PUBLIC_FIRESTORE_DB_NAME || hardcodedConfig.firestoreDbName,
   };
   
   console.log('[FirebaseConfigScript] Config source:', 
     process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'environment' : 'hardcoded'
   );
+  console.log('[FirebaseConfigScript] Firestore DB Name:', config.firestoreDbName || '(default)');
 
-  // 設定値の検証
-  const hasAllKeys = Object.values(config).every(v => v !== undefined && v !== '');
+  // 設定値の検証（firestoreDbNameは任意なので除外）
+  const requiredConfig = {
+    apiKey: config.apiKey,
+    authDomain: config.authDomain,
+    projectId: config.projectId,
+    storageBucket: config.storageBucket,
+    messagingSenderId: config.messagingSenderId,
+    appId: config.appId,
+  };
+  
+  const hasAllKeys = Object.values(requiredConfig).every(v => v !== undefined && v !== '');
   
   if (!hasAllKeys) {
     console.error('[FirebaseConfigScript] Missing Firebase configuration');

@@ -34,7 +34,7 @@ export async function createChildProfile(
   age: number,
   parentUserId: string
 ): Promise<ChildProfile> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const profile: ChildProfile = {
     childId,
     name,
@@ -63,7 +63,7 @@ export async function createChildProfile(
  * 子供のプロフィールを取得
  */
 export async function getChildProfile(childId: string): Promise<ChildProfile | null> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const docRef = doc(db, 'children', childId);
   const docSnap = await getDoc(docRef);
   
@@ -81,7 +81,7 @@ export async function updateChildProfile(
   childId: string,
   updates: Partial<ChildProfile>
 ): Promise<void> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const docRef = doc(db, 'children', childId);
   await updateDoc(docRef, {
     ...updates,
@@ -107,7 +107,7 @@ export async function createConversation(
 ): Promise<ConversationMetadata> {
   console.log('[Firestore] createConversation called', { childId, conversationId });
   
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const metadata: ConversationMetadata = {
     conversationId,
     childId,
@@ -153,7 +153,7 @@ export async function completeConversation(
 ): Promise<void> {
   console.log('[Firestore] completeConversation called', { childId, conversationId, totalScenes });
   
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const conversationRef = doc(
     db,
     'children',
@@ -213,7 +213,7 @@ export async function getConversation(
   childId: string,
   conversationId: string
 ): Promise<ConversationMetadata | null> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const docRef = doc(db, 'children', childId, 'conversations', conversationId);
   const docSnap = await getDoc(docRef);
   
@@ -231,7 +231,7 @@ export async function getRecentConversations(
   childId: string,
   limitCount: number = 10
 ): Promise<ConversationMetadata[]> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const q = query(
     collection(db, 'children', childId, 'conversations'),
     orderBy('createdAt', 'desc'),
@@ -254,7 +254,7 @@ export async function addScene(
   conversationId: string,
   scene: Omit<ConversationScene, 'createdAt'>
 ): Promise<void> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const sceneRef = doc(
     db,
     'children',
@@ -284,7 +284,7 @@ export async function addScenesBatch(
 ): Promise<void> {
   console.log('[Firestore] addScenesBatch called', { childId, conversationId, sceneCount: scenes.length });
   
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const batch = writeBatch(db);
 
   scenes.forEach((scene) => {
@@ -322,7 +322,7 @@ export async function getScenes(
   childId: string,
   conversationId: string
 ): Promise<ConversationScene[]> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const q = query(
     collection(db, 'children', childId, 'conversations', conversationId, 'scenes'),
     orderBy('order', 'asc')
@@ -344,7 +344,7 @@ export async function getConversationsByDateRange(
   startDate: Date,
   endDate: Date
 ): Promise<ConversationMetadata[]> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const q = query(
     collection(db, 'children', childId, 'conversations'),
     where('createdAt', '>=', Timestamp.fromDate(startDate)),
@@ -363,7 +363,7 @@ export async function getConversationsByTopic(
   childId: string,
   curiosityType: string
 ): Promise<ConversationMetadata[]> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const q = query(
     collection(db, 'children', childId, 'conversations'),
     where('curiosityType', '==', curiosityType),
@@ -381,7 +381,7 @@ export async function getCompletedConversations(
   childId: string,
   limitCount: number = 20
 ): Promise<ConversationMetadata[]> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const q = query(
     collection(db, 'children', childId, 'conversations'),
     where('status', '==', 'completed'),
@@ -403,7 +403,7 @@ export async function getCompletedConversations(
 export async function getChildrenByParent(
   parentUserId: string
 ): Promise<ChildProfile[]> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const q = query(
     collection(db, 'children'),
     where('parentUserId', '==', parentUserId),
@@ -441,7 +441,7 @@ export async function updateConversationFeedback(
     parentNotes?: string;
   }
 ): Promise<void> {
-  const db = getFirebaseDb();
+  const db = await getFirebaseDb();
   const conversationRef = doc(
     db,
     'children',

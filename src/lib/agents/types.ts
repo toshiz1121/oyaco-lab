@@ -10,6 +10,7 @@ export interface Agent {
   color: string;     // UI theme color
   expertise: string[];    // 得意な分野キーワード
   cannotHandle: string[]; // 専門外の分野キーワード
+  voiceName: string; // Vertex AI TTS voice name (Chirp 3 HD)
 }
 
 export interface ExplanationStep {
@@ -28,7 +29,7 @@ export interface SentenceImagePair {
   imageUrl: string | null;       // 生成された画像URL（未生成時はnull）
   audioData: string | null;      // Base64エンコードされた音声データ（未生成時はnull）
   status: PairStatus;            // 現在の生成ステータス
-  generatedAt?: Date;            // 画像生成完了時刻
+  generatedAt?: string;           // 画像生成完了時刻（ISO文字列）
 }
 
 /**
@@ -77,6 +78,7 @@ export interface AgentResponse {
 
   // 新フロー用
   pairs?: SentenceImagePair[];   // 文章画像ペアの配列
+  combinedImageUrl?: string;     // 4パネル結合画像URL（全ステップ共通）
   useParallelGeneration?: boolean; // どちらのフローを使用したか
   agentPipeline?: AgentPipelineMetadata; // パイプラインメタデータ
   followUpQuestions?: FollowUpQuestion[]; // 深掘り質問候補

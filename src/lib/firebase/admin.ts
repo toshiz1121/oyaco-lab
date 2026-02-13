@@ -52,6 +52,7 @@ function getAdminApp(): App {
  */
 export function getAdminDb(): Firestore {
   if (_adminDb) return _adminDb;
-  _adminDb = getFirestore(getAdminApp());
+  const dbName = process.env.NEXT_PUBLIC_FIRESTORE_DB_NAME || 'kidds-kikkake-lab';
+  _adminDb = getFirestore(getAdminApp(), dbName);
   return _adminDb;
 }

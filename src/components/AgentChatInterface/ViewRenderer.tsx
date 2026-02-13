@@ -73,8 +73,6 @@ export function ViewRenderer({
         <ResultView
           response={latestResponse}
           agent={agent}
-          onStartListening={onMicToggle}
-          isListening={isListening}
           question={currentQuestion}
           onFollowUpQuestion={onFollowUpQuestion}
         />
@@ -82,15 +80,15 @@ export function ViewRenderer({
     );
   }
 
-  // 入力画面
-  const defaultAgent = agents.scientist;
+  // 入力画面 - orchestratorを常に表示、ボーダーなしで全画面
+  const orchestrator = agents.orchestrator;
   return (
-    <div className={CONTAINER_CLASSES}>
+    <div className="w-full h-full max-w-7xl mx-auto overflow-hidden rounded-2xl md:rounded-3xl max-h-[calc(100dvh-100px)] sm:max-h-[calc(100dvh-120px)]">
       <InputView
         onStartListening={onMicToggle}
         isListening={isListening}
-        agentName="ピカリはかせ"
-        agentAvatar={defaultAgent.avatar}
+        agentName={orchestrator.nameJa}
+        agentAvatar={orchestrator.avatar}
       />
     </div>
   );

@@ -170,20 +170,49 @@ ${agent.persona}
 ${styleInstruction ? `6. ${styleInstruction}` : ''}
 
 ### 解説の指針（起承転結）
-解説は以下の「起・承・転・結」の流れを意識し、2〜4ステップに集約してください。
+解説は以下の「起・承・転・結」の流れに従い、必ず4ステップで構成してください。ステップ数は必ず4つにしてください。3つ以下や5つ以上は不可です。
 1.【起】質問を褒め、身近なものに例えて全体像を伝える（導入）
 2.【承】その例えを使って、仕組みや理由を具体的に広げる（展開）
 3.【転】「もし〜がなかったら？」や「実はこうなんだよ」という驚きや視点の変化を与える（深掘り）
 4.【結】まとめと、子供の未来や好奇心につながる励まし（結論）
 
-### JSON形式
+### visualDescriptionの作成ルール（重要）
+各ステップの「text」の内容を忠実に反映した英語の画像生成プロンプトを作成してください。
+- textで説明している具体的な現象・物・状況を英語で詳細に描写すること
+- textに書かれていない要素を勝手に追加しないこと
+- 各ステップのtextの内容が異なれば、visualDescriptionも必ず異なる内容にすること
+- 画像にテキスト・文字・数字・ラベルは一切含めないこと（DO NOT include any text, letters, numbers, or labels）
+- 子供向けの絵本風イラストとして、明るく親しみやすい雰囲気にすること
+
+例：
+- text: "虹は太陽の光が雨粒に当たってできるんだよ"
+  → visualDescription: "A bright rainbow forming in the sky as sunlight passes through raindrops, with a smiling sun and scattered water droplets, children's book illustration style, no text"
+- text: "光が水の中で曲がって、7色に分かれるんだ"
+  → visualDescription: "A beam of white light entering a large water droplet and splitting into seven colorful rays (red, orange, yellow, green, blue, indigo, violet), simple educational diagram style for kids, no text"
+
+### JSON形式（必ず4ステップ）
 {
   "text": "回答全体の要約。博士が自分の口調で優しく語りかける100文字程度のまとめ。",
   "steps": [
     {
       "stepNumber": 1,
-      "text": "ステップ1の説明文（必ず自分の口調で、独立した完結文）",
-      "visualDescription": "Detailed English prompt for image generation reflecting this step's scene."
+      "text": "【起】ステップ1の説明文（必ず自分の口調で、独立した完結文）",
+      "visualDescription": "このステップのtextの内容を忠実に反映した英語の画像プロンプト。テキストや文字は含めない。"
+    },
+    {
+      "stepNumber": 2,
+      "text": "【承】ステップ2の説明文（必ず自分の口調で、独立した完結文）",
+      "visualDescription": "このステップのtextの内容を忠実に反映した英語の画像プロンプト。テキストや文字は含めない。"
+    },
+    {
+      "stepNumber": 3,
+      "text": "【転】ステップ3の説明文（必ず自分の口調で、独立した完結文）",
+      "visualDescription": "このステップのtextの内容を忠実に反映した英語の画像プロンプト。テキストや文字は含めない。"
+    },
+    {
+      "stepNumber": 4,
+      "text": "【結】ステップ4の説明文（必ず自分の口調で、独立した完結文）",
+      "visualDescription": "このステップのtextの内容を忠実に反映した英語の画像プロンプト。テキストや文字は含めない。"
     }
   ]
 }
@@ -257,7 +286,7 @@ ${expert.nameJa}が子供の質問に回答しました。
 
 # チェック基準
 1. 難しい言葉や専門用語が使われていないか
-2. 文章が長すぎないか（1ステップ100文字以内が理想）
+2. 文章が長すぎないか（1ステップ200文字以内が理想）
 3. 比喩が子供の生活に身近なものか
 4. 怖い表現や不安にさせる表現がないか
 5. 全体として子供が「わかった！」と思える内容か
@@ -274,7 +303,9 @@ ${stepsText}
 - 問題なければ approved: true にして、簡単なコメントを feedback に書いてください
 - 修正が必要なら approved: false にして、修正版を revisedSteps に書いてください
   - 修正版は元の博士（${expert.nameJa}）の口調を維持してください
-  - visualDescription は変更しないでください
+  - 修正版も必ず4ステップで構成してください（起承転結）
+  - visualDescription は絶対に変更しないでください（元の値をそのままコピーすること）
+  - textのみを修正してください
 
 # JSON形式で回答
 {
@@ -285,7 +316,7 @@ ${stepsText}
     {
       "stepNumber": 1,
       "text": "修正後のステップ文（修正不要なら省略）",
-      "visualDescription": "元のまま変更しない"
+      "visualDescription": "元の値をそのままコピー（絶対に変更しない）"
     }
   ]
 }
@@ -300,7 +331,7 @@ ${stepsText}
     });
 
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    if (!content) throw new Error("No content from educator review");
+    if (!content) throw new Error("評価が上手く処理できませんでした。");
 
     const jsonString = content.replace(/^```json\n|\n```$/g, '').replace(/^```\n|\n```$/g, '');
     const parsed = JSON.parse(jsonString);
@@ -449,8 +480,6 @@ export function createSentenceImagePairs(steps: ExplanationStep[]): SentenceImag
  * ステップ説明から1枚の画像（パネルレイアウト）を生成するためのプロンプトを作成する
  * 
  * 実装背景:
- * - 複数のステップを1枚の画像にまとめることで、視覚的な理解を促進
- * - ステップ数に応じて最適なレイアウト（1パネル、2パネル、4パネル）を選択
  * - 子供向け絵本スタイルの温かいイラストを生成
  * 
  * @param steps 説明ステップの配列
@@ -459,33 +488,17 @@ export function createSentenceImagePairs(steps: ExplanationStep[]): SentenceImag
 export function generateCombinedImagePrompt(steps: ExplanationStep[]): string {
   if (!steps || steps.length === 0) return "Children's book illustration";
 
-  const count = steps.length;
-  const baseStyle = 'The style should be "children\'s book illustration, colorful, warm, simple, clean lines". If any text is included in the image, it MUST be in Japanese.';
+  const baseStyle = 'Style: children\'s book illustration, colorful, warm, simple, clean lines. IMPORTANT: Do NOT include any text, letters, numbers, labels, or words in the image. The image must be purely visual with no written content.';
 
-  if (count === 1) {
-    return `
-          Create an illustration for a children's book.
-          ${baseStyle}
-          Description: ${steps[0].visualDescription}
-        `.trim();
-  } else if (count === 2) {
-    return `
-          Create a split-screen image divided vertically into 2 equal panels (Left and Right).
-          ${baseStyle}
-          Panel 1 (Left): ${steps[0].visualDescription}
-          Panel 2 (Right): ${steps[1].visualDescription}
-        `.trim();
-  } else {
-    // Default to 4 panels (2x2 grid) for 3+ steps
-    return `
-          Create a comic strip style image divided into 4 equal panels (2x2 grid).
-          ${baseStyle}
-          Panel 1 (Top-Left): ${steps[0]?.visualDescription || ''}
-          Panel 2 (Top-Right): ${steps[1]?.visualDescription || ''}
-          Panel 3 (Bottom-Left): ${steps[2]?.visualDescription || ''}
-          Panel 4 (Bottom-Right): ${steps[3]?.visualDescription || ''}
-        `.trim();
-  }
+  return `
+    Create a single image divided into 4 equal panels in a 2x2 grid, separated by thin white lines.
+    Each panel illustrates a different scene. The panels should be clearly separated.
+    ${baseStyle}
+    Top-Left panel: ${steps[0]?.visualDescription || ''}
+    Top-Right panel: ${steps[1]?.visualDescription || ''}
+    Bottom-Left panel: ${steps[2]?.visualDescription || ''}
+    Bottom-Right panel: ${steps[3]?.visualDescription || ''}
+  `.trim();
 }
 
 /**
