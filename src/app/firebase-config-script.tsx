@@ -21,7 +21,7 @@ export function FirebaseConfigScript() {
     storageBucket: "zenn202602.firebasestorage.app",
     messagingSenderId: "572758467709",
     appId: "1:572758467709:web:dbbad2ad786a8cc19e3d14",
-    firestoreDbName: "", // デフォルトデータベースを使用する場合は空文字列
+    firestoreDbName: "kidds-kikkake-lab", // 実際のデータベース名を設定
   };
   
   // 環境変数があればそれを使用、なければハードコード値を使用
@@ -38,6 +38,7 @@ export function FirebaseConfigScript() {
   console.log('[FirebaseConfigScript] Config source:', 
     process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'environment' : 'hardcoded'
   );
+  console.log('[FirebaseConfigScript] Firestore DB Name:', config.firestoreDbName || '(default)');
 
   // 設定値の検証（firestoreDbNameは任意なので除外）
   const requiredConfig = {
