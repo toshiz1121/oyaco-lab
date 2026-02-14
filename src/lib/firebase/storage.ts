@@ -1,6 +1,7 @@
 /**
- * Firebase Storage 画像アップロードユーティリティ
+ * Firebase Storage 画像アップロードユーティリティ（クライアントサイド専用）
  * 
+ * クライアントSDK（firebase/storage）を使用。
  * 結合画像（4パネル）1枚のみをFirebase Storageに保存する
  */
 

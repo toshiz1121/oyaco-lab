@@ -26,9 +26,11 @@ function getAdminApp(): App {
     return _adminApp;
   }
 
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 
-                    process.env.FIREBASE_PROJECT_ID || 
-                    'zenn202602';
+  const projectId = process.env.FIREBASE_PROJECT_ID || 'zenn202602';
+
+  if (!process.env.FIREBASE_PROJECT_ID) {
+    console.warn('[Firebase Admin] FIREBASE_PROJECT_ID is not set, using default: zenn202602');
+  }
 
   try {
     // Application Default Credentials (ADC) を使用
@@ -52,7 +54,10 @@ function getAdminApp(): App {
  */
 export function getAdminDb(): Firestore {
   if (_adminDb) return _adminDb;
-  const dbName = process.env.NEXT_PUBLIC_FIRESTORE_DB_NAME || 'kidds-kikkake-lab';
+  const dbName = process.env.FIRESTORE_DB_NAME || 'kidds-kikkake-lab';
+  if (!process.env.FIRESTORE_DB_NAME) {
+    console.warn('[Firebase Admin] FIRESTORE_DB_NAME is not set, using default: kidds-kikkake-lab');
+  }
   _adminDb = getFirestore(getAdminApp(), dbName);
   return _adminDb;
 }

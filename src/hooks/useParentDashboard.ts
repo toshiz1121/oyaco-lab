@@ -1,3 +1,17 @@
+/**
+ * useParentDashboard — 保護者ダッシュボードのデータ取得・操作を管理するフック
+ *
+ * 【役割】
+ *  - ログイン中の保護者に紐づく子供一覧を取得
+ *  - 選択中の子供の最近の会話履歴を取得
+ *  - 会話詳細の取得やフィードバック保存も提供
+ *
+ * 【データフロー】
+ *  AuthContext(parentUserId, childrenIds)
+ *    → Firestore から子供プロフィール一覧を取得
+ *    → 最初の子供を自動選択
+ *    → 選択中の子供の会話履歴を取得
+ */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,7 +22,7 @@ import {
   getConversationWithScenes,
   updateConversationFeedback,
 } from '@/lib/firebase/firestore';
-import type { ChildProfile, ConversationMetadata, ConversationScene } from '@/lib/firebase/types';
+import type { ChildProfile, ConversationMetadata } from '@/lib/firebase/types';
 
 interface DashboardState {
   children: ChildProfile[];
@@ -28,13 +42,17 @@ export function useParentDashboard() {
     error: null,
   });
 
-  // 子供一覧を取得（childrenIds から個別取得 — composite index 不要）
+  // --------------------------------------------------
+  // 子供一覧を取得（childrenIds から個別に取得）
+  // --------------------------------------------------
   useEffect(() => {
     if (!parentUserId || childrenIds.length === 0) return;
 
     const load = async () => {
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
+
+        // 各 childId のプロフィールを並列取得
         const profiles = await Promise.all(
           childrenIds.map((id) => getChildProfile(id))
         );
@@ -47,8 +65,7 @@ export function useParentDashboard() {
           selectedChildId: firstChildId,
           loading: false,
         }));
-      } catch (err) {
-        console.error('[useParentDashboard] Failed to load children:', err);
+      } catch {
         setState((prev) => ({
           ...prev,
           loading: false,
@@ -60,7 +77,9 @@ export function useParentDashboard() {
     load();
   }, [parentUserId, childrenIds]);
 
-  // 選択中の子供の会話を取得
+  // --------------------------------------------------
+  // 選択中の子供の会話履歴を取得（子供切り替え時にも再実行）
+  // --------------------------------------------------
   useEffect(() => {
     if (!state.selectedChildId) return;
 
@@ -68,22 +87,25 @@ export function useParentDashboard() {
       try {
         const conversations = await getRecentConversations(state.selectedChildId!, 20);
         setState((prev) => ({ ...prev, conversations }));
-      } catch (err) {
-        console.error('[useParentDashboard] Failed to load conversations:', err);
+      } catch {
+        // 会話取得失敗は致命的ではないので握りつぶす
       }
     };
 
     load();
   }, [state.selectedChildId]);
 
+  /** 子供を切り替える（会話一覧もリセット） */
   const selectChild = useCallback((childId: string) => {
     setState((prev) => ({ ...prev, selectedChildId: childId, conversations: [] }));
   }, []);
 
+  /** 現在選択中の子供プロフィール */
   const selectedChild = state.children.find(
     (c) => c.childId === state.selectedChildId
   ) ?? null;
 
+  /** 会話詳細（シーン付き）を取得 */
   const loadConversationDetail = useCallback(
     async (conversationId: string) => {
       if (!state.selectedChildId) return null;
@@ -92,6 +114,7 @@ export function useParentDashboard() {
     [state.selectedChildId]
   );
 
+  /** 会話にフィードバック（ブックマーク・評価・メモ）を保存 */
   const saveFeedback = useCallback(
     async (
       conversationId: string,
@@ -99,7 +122,8 @@ export function useParentDashboard() {
     ) => {
       if (!state.selectedChildId) return;
       await updateConversationFeedback(state.selectedChildId, conversationId, feedback);
-      // ローカル状態も更新
+
+      // ローカル状態にも即時反映
       setState((prev) => ({
         ...prev,
         conversations: prev.conversations.map((c) =>

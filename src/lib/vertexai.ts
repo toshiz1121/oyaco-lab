@@ -203,13 +203,18 @@ function sanitizeForLog(data: any, maxLength = 500): any {
 export async function callVertexAI(
     modelName: string,
     requestBody: any,
-    retryConfig?: RetryConfig
+    retryConfig?: RetryConfig,
+    options?: { systemInstruction?: string }
 ): Promise<any> {
     return withRetry(async () => {
         try {
             console.log(`[Vertex AI] Calling model: ${modelName}`);
 
-            const model = vertexAI.getGenerativeModel({ model: modelName });
+            const modelOptions: { model: string; systemInstruction?: string } = { model: modelName };
+            if (options?.systemInstruction) {
+                modelOptions.systemInstruction = options.systemInstruction;
+            }
+            const model = vertexAI.getGenerativeModel(modelOptions);
             const result = await model.generateContent(requestBody);
             const response = result.response;
 

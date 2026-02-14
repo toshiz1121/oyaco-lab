@@ -1,7 +1,8 @@
 /**
- * Firestore データ操作関数
+ * Firestore データ操作関数（クライアントサイド専用）
  * 
- * 子供プロフィール、会話、シーンのCRUD操作を提供
+ * クライアントSDK（firebase/firestore）を使用。
+ * サーバーサイドからは firestore-server.ts を使用すること。
  */
 
 import {
@@ -16,7 +17,6 @@ import {
   orderBy,
   limit,
   Timestamp,
-  writeBatch,
 } from 'firebase/firestore';
 import { getFirebaseDb } from './config';
 import type { ChildProfile, ConversationMetadata, ConversationScene } from './types';
@@ -35,10 +35,16 @@ export async function createChildProfile(
   parentUserId: string
 ): Promise<ChildProfile> {
   const db = await getFirebaseDb();
+  
+  // 年齢から生年を計算（現在の年 - 年齢）
+  const currentYear = new Date().getFullYear();
+  const birthYear = currentYear - age;
+  
   const profile: ChildProfile = {
     childId,
     name,
     age,
+    birthYear, // 生年を追加
     parentUserId,
     isActive: true,
     createdAt: Timestamp.now(),
@@ -55,7 +61,7 @@ export async function createChildProfile(
   };
 
   await setDoc(doc(db, 'children', childId), profile);
-  console.log(`[Firestore] Created child profile: ${childId}`);
+  console.log(`[Firestore] Created child profile: ${childId}, age: ${age}, birthYear: ${birthYear}`);
   return profile;
 }
 
@@ -87,124 +93,12 @@ export async function updateChildProfile(
     ...updates,
     updatedAt: Timestamp.now(),
   });
-  console.log(`[Firestore] Updated child profile: ${childId}`);
+  console.log('[Firestore] 子供のプロフィールのアップデート完了');
 }
 
 // ========================================
 // 会話操作
 // ========================================
-
-/**
- * 新しい会話を作成
- */
-export async function createConversation(
-  childId: string,
-  conversationId: string,
-  question: string,
-  curiosityType: string,
-  selectedExpert: string,
-  selectionReason?: string
-): Promise<ConversationMetadata> {
-  console.log('[Firestore] createConversation called', { childId, conversationId });
-  
-  const db = await getFirebaseDb();
-  const metadata: ConversationMetadata = {
-    conversationId,
-    childId,
-    question,
-    questionTimestamp: Timestamp.now(),
-    curiosityType,
-    selectedExpert,
-    selectionReason,
-    status: 'in_progress',
-    totalScenes: 0,
-    createdAt: Timestamp.now(),
-  };
-
-  const conversationRef = doc(
-    db,
-    'children',
-    childId,
-    'conversations',
-    conversationId
-  );
-  
-  console.log('[Firestore] Writing to path:', conversationRef.path);
-  
-  try {
-    await setDoc(conversationRef, metadata);
-    console.log(`[Firestore] ✅ Created conversation: ${conversationId}`);
-    return metadata;
-  } catch (error) {
-    console.error('[Firestore] ❌ Failed to create conversation:', error);
-    throw error;
-  }
-}
-
-/**
- * 会話を完了状態に更新
- */
-export async function completeConversation(
-  childId: string,
-  conversationId: string,
-  totalScenes: number,
-  duration?: number,
-  agentPipeline?: { selectedAgent: string; selectionReason: string; educatorReview?: { approved: boolean; feedback: string }; processingTimeMs: number }
-): Promise<void> {
-  console.log('[Firestore] completeConversation called', { childId, conversationId, totalScenes });
-  
-  const db = await getFirebaseDb();
-  const conversationRef = doc(
-    db,
-    'children',
-    childId,
-    'conversations',
-    conversationId
-  );
-
-  try {
-    const updateData: Record<string, unknown> = {
-      status: 'completed',
-      completedAt: Timestamp.now(),
-      totalScenes,
-      duration,
-    };
-
-    if (agentPipeline) {
-      updateData.agentPipeline = agentPipeline;
-    }
-
-    await updateDoc(conversationRef, updateData);
-    console.log('[Firestore] ✅ Conversation marked as completed');
-
-    // 子供の統計情報を更新
-    const childRef = doc(db, 'children', childId);
-    const childSnap = await getDoc(childRef);
-    
-    if (childSnap.exists()) {
-      const currentStats = childSnap.data().stats;
-      const newTotalConversations = currentStats.totalConversations + 1;
-      const newTotalScenes = currentStats.totalScenes + totalScenes;
-      
-      await updateDoc(childRef, {
-        'stats.totalConversations': newTotalConversations,
-        'stats.totalQuestions': currentStats.totalQuestions + 1,
-        'stats.totalScenes': newTotalScenes,
-        'stats.lastActivityAt': Timestamp.now(),
-        'stats.averageScenesPerConversation': Math.round(newTotalScenes / newTotalConversations),
-        updatedAt: Timestamp.now(),
-      });
-      console.log('[Firestore] ✅ Child stats updated');
-    } else {
-      console.warn('[Firestore] ⚠️ Child profile not found, skipping stats update');
-    }
-
-    console.log(`[Firestore] ✅ Completed conversation: ${conversationId}`);
-  } catch (error) {
-    console.error('[Firestore] ❌ Failed to complete conversation:', error);
-    throw error;
-  }
-}
 
 /**
  * 会話を取得
@@ -272,47 +166,6 @@ export async function addScene(
 
   await setDoc(sceneRef, sceneData);
   console.log(`[Firestore] Added scene: ${scene.sceneId}`);
-}
-
-/**
- * 複数のシーンを一括追加（バッチ処理）
- */
-export async function addScenesBatch(
-  childId: string,
-  conversationId: string,
-  scenes: Omit<ConversationScene, 'createdAt'>[]
-): Promise<void> {
-  console.log('[Firestore] addScenesBatch called', { childId, conversationId, sceneCount: scenes.length });
-  
-  const db = await getFirebaseDb();
-  const batch = writeBatch(db);
-
-  scenes.forEach((scene) => {
-    const sceneRef = doc(
-      db,
-      'children',
-      childId,
-      'conversations',
-      conversationId,
-      'scenes',
-      scene.sceneId
-    );
-
-    const sceneData: ConversationScene = {
-      ...scene,
-      createdAt: Timestamp.now(),
-    };
-
-    batch.set(sceneRef, sceneData);
-  });
-
-  try {
-    await batch.commit();
-    console.log(`[Firestore] ✅ Added ${scenes.length} scenes in batch`);
-  } catch (error) {
-    console.error('[Firestore] ❌ Failed to add scenes batch:', error);
-    throw error;
-  }
 }
 
 /**

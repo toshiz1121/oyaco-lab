@@ -1,3 +1,17 @@
+/**
+ * useSpeechRecognition — ブラウザの音声認識（Web Speech API）を扱うフック
+ *
+ * 【役割】
+ *  - マイクボタン押下 → 音声認識開始 → テキスト化 → 自動送信
+ *  - Web Speech API 非対応ブラウザでは isSupported = false
+ *
+ * 【使い方】
+ *  const { transcript, isListening, startListening, stopListening } = useSpeechRecognition();
+ *  - startListening() でマイクON
+ *  - stopListening() でマイクOFF
+ *  - transcript に認識結果が入る（確定テキスト + 途中テキスト）
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 
 interface SpeechRecognitionHook {
@@ -17,74 +31,77 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
   const [recognition, setRecognition] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // --------------------------------------------------
+  // マウント時に SpeechRecognition インスタンスを初期化
+  // --------------------------------------------------
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        setIsSupported(true);
-        const recognitionInstance = new SpeechRecognition();
-        recognitionInstance.continuous = false;
-        recognitionInstance.interimResults = true;
-        recognitionInstance.lang = 'ja-JP';
+    if (typeof window === 'undefined') return;
 
-        recognitionInstance.onstart = () => {
-            setIsListening(true);
-            setError(null);
-        };
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
 
-        recognitionInstance.onresult = (event: any) => {
-          let interimTranscript = '';
-          let finalTranscript = '';
+    setIsSupported(true);
 
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript;
-            } else {
-              interimTranscript += event.results[i][0].transcript;
-            }
-          }
-          
-          if (finalTranscript || interimTranscript) {
-              // 追記ではなく置換（一回の発話単位）
-             setTranscript(finalTranscript + interimTranscript);
-          }
-        };
+    const instance = new SpeechRecognition();
+    instance.continuous = false;       // 1回の発話で自動停止
+    instance.interimResults = true;    // 途中結果も取得
+    instance.lang = 'ja-JP';          // 日本語
 
-        recognitionInstance.onerror = (event: any) => {
-            console.error("Speech recognition error", event.error);
-            setError(event.error);
-            setIsListening(false);
-        };
+    // --- イベントハンドラー ---
+    instance.onstart = () => {
+      setIsListening(true);
+      setError(null);
+    };
 
-        recognitionInstance.onend = () => {
-            setIsListening(false);
-        };
-
-        setRecognition(recognitionInstance);
+    instance.onresult = (event: any) => {
+      let interim = '';
+      let final = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          final += event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
+        }
       }
-    }
+      // 確定テキスト + 途中テキストで上書き（追記ではなく置換）
+      if (final || interim) {
+        setTranscript(final + interim);
+      }
+    };
+
+    instance.onerror = (event: any) => {
+      setError(event.error);
+      setIsListening(false);
+    };
+
+    instance.onend = () => {
+      setIsListening(false);
+    };
+
+    setRecognition(instance);
   }, []);
 
+  /** 音声認識を開始（transcript をリセットしてからスタート） */
   const startListening = useCallback(() => {
-    if (recognition) {
-      setTranscript('');
-      setError(null);
-      try {
-        recognition.start();
-      } catch (e) {
-        console.error("Speech recognition start failed", e);
-      }
+    if (!recognition) return;
+    setTranscript('');
+    setError(null);
+    try {
+      recognition.start();
+    } catch {
+      // 既に開始済みの場合など — 無視して問題ない
     }
   }, [recognition]);
 
+  /** 音声認識を停止 */
   const stopListening = useCallback(() => {
-    if (recognition) {
-      recognition.stop();
-    }
+    if (recognition) recognition.stop();
   }, [recognition]);
-  
+
+  /** transcript を手動クリア */
   const resetTranscript = useCallback(() => {
-      setTranscript('');
+    setTranscript('');
   }, []);
 
   return {
@@ -94,6 +111,6 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
     stopListening,
     resetTranscript,
     isSupported,
-    error
+    error,
   };
 }

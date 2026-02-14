@@ -1,8 +1,14 @@
 /**
- * 会話ログ記録カスタムフック
- * 
- * Reactコンポーネントから会話ログ機能を使用するためのフック
- * 画像のFirebase Storageアップロードも担当
+ * useConversationLogger — 会話ログを Firestore に保存するフック
+ *
+ * 【役割】
+ *  - 子供の質問 → 博士の回答を1セットとして Firestore に記録
+ *  - 結合画像を Firebase Storage にアップロードし、URL を差し替え
+ *  - 好奇心タイプ（科学・自然・宇宙 etc.）をバックグラウンドで推定
+ *
+ * 【使い方】
+ *  1. startCuriosityTypeEstimation(question) で推定を先行開始
+ *  2. 回答生成完了後に logCurrentConversation(...) で保存
  */
 
 import { useState, useRef } from 'react';
@@ -10,39 +16,29 @@ import { logConversationAction, estimateCuriosityTypeAction } from '@/app/action
 import { AgentResponse, AgentRole } from '@/lib/agents/types';
 import { uploadConversationImage } from '@/lib/firebase/storage';
 
-/**
- * 会話ログ記録フック
- * 
- * @param childId - 子供のID
- * @returns ログ記録関数と状態
- */
 export function useConversationLogger(childId: string) {
   const [isLogging, setIsLogging] = useState(false);
   const [lastLoggedId, setLastLoggedId] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  
-  // 好奇心タイプ判定のPromiseを保持（バックグラウンド実行用）
+
+  // 好奇心タイプ推定の Promise を保持（解説生成と並行実行するため）
   const curiosityTypePromiseRef = useRef<Promise<string> | null>(null);
 
   /**
-   * 好奇心タイプ判定を開始（バックグラウンド実行）
-   * 
-   * 質問が確定した時点で呼び出すことで、解説生成と並行して実行できる
-   * 
-   * @param question - 子供の質問
+   * 好奇心タイプ推定をバックグラウンドで開始する
+   * 質問が確定した時点で呼び出すと、回答生成と並行して推定が走る
    */
   const startCuriosityTypeEstimation = (question: string) => {
-    console.log('[useConversationLogger] Starting curiosity type estimation in background...');
     curiosityTypePromiseRef.current = estimateCuriosityTypeAction(question);
   };
 
   /**
-   * 現在の会話をFirestoreに記録
-   * 
-   * @param question - 子供の質問
-   * @param selectedExpert - 選ばれた博士
-   * @param selectionReason - 選定理由
-   * @param response - AIの回答データ
+   * 会話ログを Firestore に保存する
+   *
+   * 内部処理:
+   *  1. 好奇心タイプを取得（先行開始済みなら await、未開始なら即時実行）
+   *  2. 結合画像を Firebase Storage にアップロード
+   *  3. Firestore に会話ドキュメントを作成
    */
   const logCurrentConversation = async (
     question: string,
@@ -54,33 +50,25 @@ export function useConversationLogger(childId: string) {
     setError(null);
 
     try {
-      // 好奇心のタイプを取得（バックグラウンドで開始済みの場合はその結果を使用）
+      // 好奇心タイプを取得
       let curiosityType: string;
       if (curiosityTypePromiseRef.current) {
-        console.log('[useConversationLogger] Waiting for background curiosity type estimation...');
         curiosityType = await curiosityTypePromiseRef.current;
-        curiosityTypePromiseRef.current = null; // 使用後はクリア
+        curiosityTypePromiseRef.current = null;
       } else {
-        console.log('[useConversationLogger] Starting curiosity type estimation (not pre-started)...');
         curiosityType = await estimateCuriosityTypeAction(question);
       }
-      
-      console.log(`[useConversationLogger] Logging conversation...`);
-      console.log(`  - Question: ${question.substring(0, 50)}...`);
-      console.log(`  - Expert: ${selectedExpert}`);
-      console.log(`  - Curiosity Type: ${curiosityType}`);
 
-      // 会話IDを事前生成（Storageパスに使用）
+      // 会話IDを事前生成（Storage パスにも使用）
       const conversationId = `conv_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
-      // 結合画像（1枚）をFirebase Storageにアップロード
+      // 結合画像を Firebase Storage にアップロード
       let uploadedResponse = response;
       if (response.combinedImageUrl && response.combinedImageUrl.startsWith('data:image/')) {
         try {
-          console.log(`[useConversationLogger] Uploading combined image to Storage...`);
           const storageUrl = await uploadConversationImage(childId, conversationId, response.combinedImageUrl);
 
-          // Storage URLに置き換え（各pairのimageUrlも同じ結合画像を参照）
+          // 各 pair の imageUrl も Storage URL に差し替え
           const updatedPairs = response.pairs?.map(pair => ({
             ...pair,
             imageUrl: storageUrl,
@@ -91,14 +79,12 @@ export function useConversationLogger(childId: string) {
             pairs: updatedPairs,
             combinedImageUrl: storageUrl,
           };
-
-          console.log(`[useConversationLogger] Combined image uploaded successfully`);
         } catch (uploadError) {
-          console.error('[useConversationLogger] Image upload failed, saving without image:', uploadError);
+          console.error('[useConversationLogger] 画像アップロード失敗（画像なしで保存を続行）:', uploadError);
         }
       }
 
-      // Firestoreに保存（事前生成したconversationIdを使用）
+      // Firestore に保存
       await logConversationAction({
         childId,
         question,
@@ -110,14 +96,12 @@ export function useConversationLogger(childId: string) {
       });
 
       setLastLoggedId(conversationId);
-      console.log(`[useConversationLogger] Successfully logged: ${conversationId}`);
-      
       return conversationId;
 
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
-      setError(error);
-      console.error('[useConversationLogger] Failed to log:', error);
+      const e = err instanceof Error ? err : new Error('Unknown error');
+      setError(e);
+      console.error('[useConversationLogger] ログ保存失敗:', e);
       return null;
 
     } finally {
@@ -125,19 +109,15 @@ export function useConversationLogger(childId: string) {
     }
   };
 
-  /**
-   * エラーをクリア
-   */
-  const clearError = () => {
-    setError(null);
-  };
+  /** エラー状態をクリア */
+  const clearError = () => setError(null);
 
   return {
-    startCuriosityTypeEstimation, // 好奇心タイプ判定開始（バックグラウンド）
-    logCurrentConversation,       // ログ記録関数
-    isLogging,                    // ログ記録中フラグ
-    lastLoggedId,                 // 最後に記録した会話ID
-    error,                        // エラー情報
-    clearError,                   // エラークリア関数
+    startCuriosityTypeEstimation,
+    logCurrentConversation,
+    isLogging,
+    lastLoggedId,
+    error,
+    clearError,
   };
 }

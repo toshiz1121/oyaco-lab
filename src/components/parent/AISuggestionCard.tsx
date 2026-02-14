@@ -91,6 +91,16 @@ export function AISuggestionCard({ childId }: AISuggestionCardProps) {
                     <p className="text-sm text-slate-700 leading-relaxed">
                       {suggestion.question}
                     </p>
+                    {suggestion.expectedReply && (
+                      <p className="text-xs text-slate-500 mt-1.5 pl-2 border-l-2 border-slate-200 leading-relaxed">
+                        🧒 {suggestion.expectedReply}
+                      </p>
+                    )}
+                    {suggestion.followUp && (
+                      <p className="text-xs text-amber-700 mt-1 pl-2 border-l-2 border-amber-200 leading-relaxed">
+                        → {suggestion.followUp}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
