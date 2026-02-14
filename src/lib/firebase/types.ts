@@ -3,9 +3,19 @@
  * 
  * 会話ログシステムで使用するFirestoreのデータ構造を定義
  * 完全なスキーマ定義は docs/doing/firestore-database-schema.md を参照
+ * 
+ * サーバーサイド・クライアントサイド両方で使用可能。
+ * Timestamp型はクライアントSDK/Admin SDKどちらの Timestamp でも受け入れられるよう
+ * FirestoreTimestamp として抽象化している。
  */
 
-import { Timestamp } from 'firebase/firestore';
+// クライアントSDKとAdmin SDKの両方のTimestampに対応する型
+// どちらも toDate() メソッドを持つ
+export type FirestoreTimestamp = {
+  toDate(): Date;
+  seconds: number;
+  nanoseconds: number;
+};
 
 // ========================================
 // 親アカウント（Googleログインユーザー）
@@ -26,9 +36,9 @@ export interface ParentUser {
   activeChildId?: string;      // 現在選択中の子供ID
   
   // メタデータ
-  createdAt: Timestamp;
-  lastLoginAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: FirestoreTimestamp;
+  lastLoginAt: FirestoreTimestamp;
+  updatedAt: FirestoreTimestamp;
   
   // 設定
   settings: {
@@ -67,8 +77,8 @@ export interface ChildProfile {
   isActive: boolean;           // アクティブ状態
   
   // タイムスタンプ
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: FirestoreTimestamp;
+  updatedAt: FirestoreTimestamp;
   
   // 統計情報（キャッシュ）
   stats: {
@@ -77,7 +87,7 @@ export interface ChildProfile {
     totalScenes: number;
     favoriteTopics: string[];
     favoriteExperts: string[];
-    lastActivityAt: Timestamp;
+    lastActivityAt: FirestoreTimestamp;
     averageScenesPerConversation: number;
   };
   
@@ -103,7 +113,7 @@ export interface ConversationMetadata {
   
   // 質問情報
   question: string;             // 子供の質問
-  questionTimestamp: Timestamp; // 質問日時
+  questionTimestamp: FirestoreTimestamp; // 質問日時
   
   // 分類情報
   curiosityType: string;        // 好奇心のタイプ
@@ -118,8 +128,8 @@ export interface ConversationMetadata {
   duration?: number;            // 会話時間（秒）
   
   // タイムスタンプ
-  createdAt: Timestamp;
-  completedAt?: Timestamp;
+  createdAt: FirestoreTimestamp;
+  completedAt?: FirestoreTimestamp;
   
   // 親のフィードバック（オプション）
   parentNotes?: string;
@@ -149,17 +159,17 @@ export interface ConversationScene {
   imagePromptUsed: string;      // 使用した画像プロンプト
   imageUrl: string;             // 生成された画像のURL
   imageHint: string;            // 画像のヒント
-  imageGeneratedAt?: Timestamp; // 画像生成日時
+  imageGeneratedAt?: FirestoreTimestamp; // 画像生成日時
   imageProvider?: string;       // 画像生成サービス
   
   // 音声情報
   audioUrl?: string;            // 音声ファイルのURL
-  audioGeneratedAt?: Timestamp; // 音声生成日時
+  audioGeneratedAt?: FirestoreTimestamp; // 音声生成日時
   audioDuration?: number;       // 音声の長さ（秒）
   audioProvider?: string;       // 音声生成サービス
   
   // メタデータ
-  createdAt: Timestamp;
+  createdAt: FirestoreTimestamp;
   
   // 技術情報（オプション）
   metadata?: {
@@ -179,8 +189,8 @@ export interface ConversationScene {
  */
 export interface WeeklySummary {
   childId: string;
-  weekStart: Timestamp;
-  weekEnd: Timestamp;
+  weekStart: FirestoreTimestamp;
+  weekEnd: FirestoreTimestamp;
   
   // 統計
   totalQuestions: number;
@@ -214,6 +224,6 @@ export interface WeeklySummary {
   }>;
   
   // メタデータ
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: FirestoreTimestamp;
+  updatedAt: FirestoreTimestamp;
 }

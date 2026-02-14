@@ -1,16 +1,13 @@
+/**
+ * 親ユーザー関連のFirestore操作（クライアントサイド専用）
+ * 
+ * クライアントSDK（firebase/firestore）を使用。
+ * サーバーサイドからは使用しないこと。
+ */
+
 import { doc, getDoc, setDoc, updateDoc, Timestamp } from "firebase/firestore";
 import { getFirebaseDb } from './config';
-
-export interface ParentUser {
-    userId: string;
-    email: string;
-    displayName: string;
-    photoURL?: string;
-    children: string[];
-    activeChildId?: string;
-    createdAt: Timestamp;
-    lastLoginAt: Timestamp;
-}
+import type { ParentUser } from './types';
 
 // 親ユーザーを取得する
 export async function getParentUser(userId: string): Promise<ParentUser | null> {
@@ -75,11 +72,17 @@ export async function createParentUser(data: {userId: string; email: string; dis
         const db = await getFirebaseDb();
         
         // 親ユーザーのデータを整理
+        const now = Timestamp.now();
         const parentUser: ParentUser = {
             ...data,
             children: [],
-            createdAt: Timestamp.now(),
-            lastLoginAt: Timestamp.now(),
+            createdAt: now,
+            lastLoginAt: now,
+            updatedAt: now,
+            settings: {
+                language: 'ja',
+                notifications: true,
+            },
         };
 
         await setDoc(doc(db, 'parents', data.userId), parentUser);

@@ -1,7 +1,8 @@
 /**
- * Firestore データ操作関数
+ * Firestore データ操作関数（クライアントサイド専用）
  * 
- * 子供プロフィール、会話、シーンのCRUD操作を提供
+ * クライアントSDK（firebase/firestore）を使用。
+ * サーバーサイドからは firestore-server.ts を使用すること。
  */
 
 import {
