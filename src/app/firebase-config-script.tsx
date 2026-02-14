@@ -13,26 +13,24 @@
  */
 
 export function FirebaseConfigScript() {
-  // ハードコードされた設定値（Cloud Consoleデプロイ用の一時的な解決策）
-  const hardcodedConfig = {
-    apiKey: "AIzaSyBGmMNP2qT9Hjn5NclTL0GMdzCJOLTRLdw",
-    authDomain: "zenn202602.firebaseapp.com",
-    projectId: "zenn202602",
-    storageBucket: "zenn202602.firebasestorage.app",
-    messagingSenderId: "572758467709",
-    appId: "1:572758467709:web:dbbad2ad786a8cc19e3d14",
-    firestoreDbName: "kidds-kikkake-lab", // 実際のデータベース名を設定
-  };
-  
-  // 環境変数があればそれを使用、なければハードコード値を使用
+  // サーバーサイドで環境変数を読み取り、クライアントに注入する
+  // Cloud Run等のコンテナ環境では NEXT_PUBLIC_ がビルド時に埋め込まれないため、
+  // サーバーサイド専用の環境変数（FIREBASE_CLIENT_*）もフォールバックとして参照する
   const config = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || hardcodedConfig.apiKey,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || hardcodedConfig.authDomain,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || hardcodedConfig.projectId,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || hardcodedConfig.storageBucket,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || hardcodedConfig.messagingSenderId,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || hardcodedConfig.appId,
-    firestoreDbName: process.env.NEXT_PUBLIC_FIRESTORE_DB_NAME || hardcodedConfig.firestoreDbName,
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+      || process.env.FIREBASE_CLIENT_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+      || process.env.FIREBASE_CLIENT_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      || process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+      || process.env.FIREBASE_CLIENT_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+      || process.env.FIREBASE_CLIENT_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+      || process.env.FIREBASE_CLIENT_APP_ID,
+    firestoreDbName: process.env.NEXT_PUBLIC_FIRESTORE_DB_NAME
+      || process.env.FIRESTORE_DB_NAME,
   };
   
 
