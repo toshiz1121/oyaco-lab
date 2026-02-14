@@ -16,6 +16,7 @@ export type ParentToolName =
   | 'analyzeConversationHistory'
   | 'analyzeLearningProgress'
   | 'identifyKnowledgeGaps'
+  | 'suggestEnrichmentActivities'
   | 'generateConversationStarter'
   | 'generateWeeklyReport';
 
@@ -30,6 +31,10 @@ export interface ToolArguments {
   };
   identifyKnowledgeGaps: {
     childId: string;
+  };
+  suggestEnrichmentActivities: {
+    childId: string;
+    interest: string; // 子供の興味・関心テーマ
   };
   generateConversationStarter: {
     childId: string;
@@ -88,6 +93,19 @@ export interface UnexploredArea {
   area: string;
   suggestedExpert: AgentRole;
   suggestedQuestion: string;
+}
+
+/** 興味を伸ばすための多角的な提案 */
+export interface EnrichmentSuggestions {
+  interest: string;
+  activities: EnrichmentActivity[];
+}
+
+export interface EnrichmentActivity {
+  category: 'place' | 'book' | 'experiment' | 'conversation' | 'play' | 'media';
+  title: string;
+  description: string;
+  ageAppropriate: boolean;
 }
 
 // ========================================

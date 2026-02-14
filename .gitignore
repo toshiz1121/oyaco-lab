@@ -49,3 +49,4 @@ docs/
 test.drawio
 test.png
 .vscode/
+spec/

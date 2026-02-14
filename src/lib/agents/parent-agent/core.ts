@@ -14,6 +14,7 @@ import {
   analyzeConversationHistory,
   analyzeLearningProgress,
   identifyKnowledgeGaps,
+  suggestEnrichmentActivities,
 } from './tools';
 import type {
   ParentAgentRequest,
@@ -76,6 +77,18 @@ const TOOL_DECLARATIONS = {
         required: ['childId'],
       },
     },
+    {
+      name: 'suggestEnrichmentActivities',
+      description: '子供の興味テーマに基づいて、訪問先（博物館・科学館）、絵本・図鑑、家庭実験、遊び、動画など多角的なアプローチを提案する。親が「この興味を伸ばしたい」と言った時に使う',
+      parameters: {
+        type: 'object' as const,
+        properties: {
+          childId: { type: 'string' as const, description: '子供のID' },
+          interest: { type: 'string' as const, description: '子供の興味・関心テーマ（例: 恐竜、宇宙、虫、料理）' },
+        },
+        required: ['childId', 'interest'],
+      },
+    },
   ],
 };
 
@@ -87,7 +100,7 @@ function buildSystemPrompt(request: ParentAgentRequest): string {
   return `あなたは「子育てアドバイザー」AIエージェントです。
 
 # 役割
-親御さんが子供の学習状況を理解し、日常の会話に活かせるよう支援します。
+親御さんが子供の学習状況を理解し、子供の興味や好奇心を多角的に伸ばせるよう支援します。
 
 # 子供の情報
 - 名前: ${request.childName}
@@ -100,10 +113,22 @@ function buildSystemPrompt(request: ParentAgentRequest): string {
 4. 温かみのある口調で、親を励ますように話してください
 5. 子供の名前を使って、パーソナライズされた回答をしてください
 
+# 提案の多角性
+親が子供の興味について相談した場合、会話の提案だけでなく、以下の複数の角度から提案してください:
+- 🏛️ 訪問先: 博物館・科学館・動物園・水族館・プラネタリウムなど、テーマに関連する施設
+- 📚 本・図鑑: 年齢に合った絵本・図鑑・児童書の具体的なおすすめ
+- 🔬 家庭実験・観察: 家にあるもので親子でできる簡単な実験や観察活動
+- 🎮 遊び・工作: テーマに関連したごっこ遊び・工作・ゲーム
+- 📺 動画・番組: NHK Eテレなど信頼できる子供向けコンテンツ
+- 💬 会話のきっかけ: 日常の中で自然にテーマに触れる会話例
+
+すべてを毎回提案する必要はありません。親の質問に応じて最も効果的な組み合わせを選んでください。
+
 # 回答の形式
-- 簡潔に（200〜400文字程度）
-- 具体的なシチュエーション付きのアドバイスを含める
+- 簡潔に（200〜300文字程度）
+- 具体的な施設名・書籍名・活動内容を含める（一般的に知られているもの）
 - 数値データがあれば自然に織り込む
+- 「〜してみてはいかがでしょうか」ではなく「〜がおすすめです」「〜してみましょう」と具体的に
 - 最後に前向きな一言を添える`;
 }
 
@@ -127,7 +152,7 @@ export async function runParentAgent(
   const steps: AgentStep[] = [];
   const toolsUsed: ParentToolName[] = [];
 
-  // 会話履歴（LLM とのマルチターン）
+  // 会話履歴
   const messages: Array<{ role: string; parts: Array<Record<string, unknown>> }> = [
     {
       role: 'user',
@@ -148,7 +173,7 @@ export async function runParentAgent(
 
     const candidate = response.candidates?.[0];
     if (!candidate?.content?.parts) {
-      console.warn('[ParentAgent] Empty response from LLM');
+      console.warn('[ParentAgent] 回答がからです');
       break;
     }
 
@@ -250,6 +275,10 @@ async function executeToolCall(
     }
     case 'identifyKnowledgeGaps': {
       return identifyKnowledgeGaps(childId);
+    }
+    case 'suggestEnrichmentActivities': {
+      const interest = (args.interest as string) || '';
+      return suggestEnrichmentActivities(childId, interest);
     }
     default:
       return { error: `Unknown tool: ${toolName}` };

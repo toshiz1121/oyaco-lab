@@ -15,6 +15,8 @@ import type {
   ConversationAnalysis,
   LearningProgressAnalysis,
   KnowledgeGapAnalysis,
+  EnrichmentSuggestions,
+  EnrichmentActivity,
   TopicCount,
   ExpertCount,
   UnexploredArea,
@@ -166,6 +168,103 @@ export async function identifyKnowledgeGaps(
     unexploredAreas,
     recommendations,
   };
+}
+
+// ========================================
+// ツール4: 興味を伸ばす多角的提案
+// ========================================
+
+/**
+ * 子供の興味テーマに基づいて、会話以外の多角的なアプローチを提案する
+ * 
+ * カテゴリ:
+ * - place: 博物館・科学館・公園など訪問先
+ * - book: 絵本・図鑑・児童書
+ * - experiment: 家庭でできる実験・観察
+ * - conversation: 親子の会話のきっかけ
+ * - play: 遊び・ゲーム・工作
+ * - media: 動画・アプリ・番組
+ */
+export async function suggestEnrichmentActivities(
+  childId: string,
+  interest: string
+): Promise<EnrichmentSuggestions> {
+  // 子供の最近の会話から文脈を取得
+  const conversations = await getRecentConversations(childId, 10);
+  const completed = conversations.filter(c => c.status === 'completed');
+
+  const relatedQuestions = completed
+    .filter(c => {
+      const q = c.question.toLowerCase();
+      const interestLower = interest.toLowerCase();
+      // 興味テーマに関連する質問を抽出
+      return interestLower.split(/[\s、,]+/).some(keyword => 
+        keyword.length >= 2 && q.includes(keyword)
+      );
+    })
+    .slice(0, 5)
+    .map(c => c.question);
+
+  // 興味テーマに基づいた提案テンプレート
+  const activities = generateActivitiesForInterest(interest, relatedQuestions);
+
+  return {
+    interest,
+    activities,
+  };
+}
+
+/**
+ * 興味テーマに基づいて多角的な活動提案を生成する
+ */
+function generateActivitiesForInterest(
+  interest: string,
+  relatedQuestions: string[]
+): EnrichmentActivity[] {
+  // 汎用的な提案テンプレート（LLMがシステムプロンプトの指示に従い、
+  // この構造化データを参考にしつつ具体的な回答を生成する）
+  const activities: EnrichmentActivity[] = [
+    {
+      category: 'place',
+      title: `${interest}に関連する施設`,
+      description: `${interest}について体験的に学べる博物館・科学館・動物園などの施設。実物を見て触れる体験は、子供の理解を深めます。`,
+      ageAppropriate: true,
+    },
+    {
+      category: 'book',
+      title: `${interest}の絵本・図鑑`,
+      description: `${interest}をテーマにした年齢に合った絵本や図鑑。ビジュアルが豊富なものが子供の興味を引きます。`,
+      ageAppropriate: true,
+    },
+    {
+      category: 'experiment',
+      title: `${interest}に関する家庭実験`,
+      description: `家にあるもので${interest}に関連した簡単な実験や観察ができます。親子で一緒に取り組むと学びが深まります。`,
+      ageAppropriate: true,
+    },
+    {
+      category: 'conversation',
+      title: `${interest}を広げる会話`,
+      description: relatedQuestions.length > 0
+        ? `最近「${relatedQuestions[0]}」と聞いていました。この興味をさらに広げる会話のきっかけを作れます。`
+        : `${interest}について日常の中で自然に話題にできるシーンがあります。`,
+      ageAppropriate: true,
+    },
+    {
+      category: 'play',
+      title: `${interest}をテーマにした遊び`,
+      description: `${interest}に関連したごっこ遊び・工作・ゲームなど。遊びの中で自然に学びが生まれます。`,
+      ageAppropriate: true,
+    },
+    {
+      category: 'media',
+      title: `${interest}の動画・番組`,
+      description: `${interest}をわかりやすく紹介する子供向け番組や動画。NHK Eテレなど信頼できるコンテンツがおすすめです。`,
+      ageAppropriate: true,
+    },
+  ];
+
+  return activities;
 }
 
 // ========================================

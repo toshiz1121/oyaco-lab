@@ -15,6 +15,8 @@ export type {
   ConversationAnalysis,
   LearningProgressAnalysis,
   KnowledgeGapAnalysis,
+  EnrichmentSuggestions,
+  EnrichmentActivity,
   TopicCount,
   ExpertCount,
   UnexploredArea,
