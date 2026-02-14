@@ -175,7 +175,7 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
         {/* 質問表示 */}
         {question && (
           <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-            className="px-2 sm:px-3 pt-1.5 sm:pt-2 md:px-4 md:pt-3">
+            className="px-2 sm:px-3 pt-0 md:px-4">
             <div className="max-w-2xl mx-auto bg-white/95 backdrop-blur-sm rounded-xl sm:rounded-2xl px-3 sm:px-4 py-1.5 sm:py-2 border-2 border-blue-300 shadow-md">
               <p className="text-[10px] sm:text-xs text-blue-600 font-bold mb-0.5">きみのしつもん</p>
               <p className="text-xs sm:text-sm md:text-base text-blue-900 font-bold break-words leading-relaxed">{question}</p>
@@ -204,8 +204,8 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            className={`w-full sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] aspect-square sm:aspect-[4/3] bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 sm:border-3 border-slate-200 p-0.5 sm:p-1 overflow-hidden relative ${
-              showFollowUp ? 'max-w-[95%]' : 'max-w-full'
+            className={`w-full sm:max-w-[400px] md:max-w-[480px] lg:max-w-[560px] aspect-square sm:aspect-[4/3] bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 sm:border-3 border-slate-200 p-0.5 sm:p-1 overflow-hidden relative ${
+              showFollowUp ? 'max-w-[80%]' : 'max-w-[90%]'
             }`}
           >
             {response.combinedImageUrl ? (
@@ -248,8 +248,8 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
 
           {/* 博士アバター + 吹き出し */}
           <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-            className={`flex items-end gap-2 md:gap-3 w-full sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] mt-2 sm:mt-3 ${
-              showFollowUp ? 'max-w-[95%]' : 'max-w-full'
+            className={`flex items-end gap-2 md:gap-3 w-full sm:max-w-[400px] md:max-w-[480px] lg:max-w-[560px] mt-1.5 sm:mt-2 ${
+              showFollowUp ? 'max-w-[80%]' : 'max-w-[90%]'
             }`}>
             <div className="flex flex-col items-center shrink-0">
               <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
@@ -262,7 +262,7 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
             </div>
 
             <div className={`flex-1 bg-white rounded-xl sm:rounded-2xl rounded-bl-none p-2.5 sm:p-3 md:p-4 border-2 border-blue-200 shadow-md relative overflow-y-auto ${
-              showFollowUp ? 'min-h-[60px] sm:min-h-[80px] max-h-[120px] sm:max-h-[160px] md:max-h-[200px]' : 'min-h-[80px] sm:min-h-[80px] max-h-[160px] sm:max-h-[160px] md:max-h-[200px]'
+              showFollowUp ? 'min-h-[50px] sm:min-h-[60px] max-h-[80px] sm:max-h-[100px] md:max-h-[120px]' : 'min-h-[60px] sm:min-h-[70px] max-h-[100px] sm:max-h-[120px] md:max-h-[150px]'
             }`}>
               <p className="text-xs sm:text-sm md:text-base leading-relaxed pr-6 sm:pr-7">{currentPair.text}</p>
 
@@ -285,7 +285,7 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
 
           {/* ナビゲーション */}
           <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
-            className="flex gap-2 sm:gap-3 mt-6 sm:mt-4">
+            className="flex gap-2 sm:gap-3 mt-2 sm:mt-3">
             {!isFirst && (
               <Button onClick={handlePrevious} variant="outline" size="default"
                 className="gap-1 sm:gap-1.5 rounded-full px-3 sm:px-4 text-xs sm:text-sm min-h-[40px]">
@@ -316,7 +316,7 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
           {showFollowUp && (
             <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
               transition={{ type: "spring", stiffness: 150, damping: 15 }}
-              className="w-full max-w-[95%] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] mt-4 sm:mt-6 mb-4">
+              className="w-full max-w-[80%] sm:max-w-[400px] md:max-w-[480px] lg:max-w-[560px] mt-2 sm:mt-3 mb-2">
               {followUpQuestions.length > 0 && (
                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 border-2 border-yellow-200 shadow-md">
                   <p className="text-xs sm:text-sm font-bold text-orange-700 mb-2 sm:mb-3 flex items-center gap-1.5">

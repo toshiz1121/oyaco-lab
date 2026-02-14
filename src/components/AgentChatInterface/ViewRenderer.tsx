@@ -20,7 +20,7 @@ interface ViewRendererProps {
   onFollowUpQuestion?: (question: string) => void;
 }
 
-const CONTAINER_CLASSES = "w-full max-w-7xl mx-auto bg-white/95 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border-2 sm:border-4 md:border-6 border-slate-900/10 h-full max-h-[calc(100dvh-100px)] sm:max-h-[calc(100dvh-120px)]";
+const CONTAINER_CLASSES = "w-full max-w-7xl mx-auto bg-white/95 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border-2 sm:border-4 md:border-6 border-slate-900/10 h-full max-h-[calc(100dvh-160px)] sm:max-h-[calc(100dvh-170px)]";
 
 export function ViewRenderer({
   viewMode,
@@ -83,7 +83,7 @@ export function ViewRenderer({
   // 入力画面 - orchestratorを常に表示、ボーダーなしで全画面
   const orchestrator = agents.orchestrator;
   return (
-    <div className="w-full h-full max-w-7xl mx-auto overflow-hidden rounded-2xl md:rounded-3xl max-h-[calc(100dvh-100px)] sm:max-h-[calc(100dvh-120px)]">
+    <div className="w-full h-full max-w-7xl mx-auto overflow-hidden rounded-2xl md:rounded-3xl max-h-[calc(100dvh-160px)] sm:max-h-[calc(100dvh-170px)]">
       <InputView
         onStartListening={onMicToggle}
         isListening={isListening}

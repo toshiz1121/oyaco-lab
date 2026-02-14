@@ -60,7 +60,7 @@ export default function Home() {
       </header>
 
       {/* メインコンテンツ */}
-      <main className="flex-1 overflow-auto px-2 sm:px-4 py-2 sm:py-4">
+      <main className="flex-1 overflow-auto px-2 sm:px-4 py-1 sm:py-2">
         <div className="w-full max-w-6xl mx-auto h-full flex items-center justify-center">
           <AgentChatInterface />
         </div>

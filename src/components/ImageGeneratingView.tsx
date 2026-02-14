@@ -76,7 +76,7 @@ export function ImageGeneratingView({
   const quiz = miniQuizzes[quizIndex]; // クイズ
 
   return (
-    <div className="relative w-full h-full min-h-screen bg-gradient-to-b from-purple-50 via-blue-50 to-pink-50 flex items-center justify-center">
+    <div className="relative w-full h-full bg-gradient-to-b from-purple-50 via-blue-50 to-pink-50 flex items-start justify-center overflow-y-auto">
       
       {/* 背景の泡 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -91,14 +91,14 @@ export function ImageGeneratingView({
       </div>
 
       {/* コンテンツ */}
-      <div className="relative z-10 w-full h-full flex items-center justify-center px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-10">
-        <div className="flex flex-col items-center justify-center w-full max-w-2xl h-full gap-4 sm:gap-5 md:gap-6">
+      <div className="relative z-10 w-full h-full flex items-start justify-center px-3 sm:px-5 md:px-8 py-3 sm:py-4">
+        <div className="flex flex-col items-center w-full max-w-2xl gap-3 sm:gap-4">
 
           {/* 質問内容 */}
           <motion.div initial={{ opacity: 0, y: -15 }} animate={{ opacity: 1, y: 0 }}
             className="w-full">
             <p className="text-xs sm:text-sm text-purple-600 font-bold mb-2 text-center">きみのしつもん</p>
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl px-4 sm:px-5 md:px-6 py-3 sm:py-4 border-2 border-purple-200 shadow-md">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl px-4 sm:px-5 md:px-6 py-2 sm:py-3 border-2 border-purple-200 shadow-md">
               <p className="text-sm sm:text-base md:text-lg text-purple-900 font-bold break-words text-center leading-relaxed">{question}</p>
             </div>
           </motion.div>
@@ -180,8 +180,8 @@ export function ImageGeneratingView({
 
           {/* ミニクイズ */}
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="w-full bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 border-2 border-blue-300 shadow-lg">
-            <p className="text-xs sm:text-sm text-blue-600 font-bold mb-2 flex items-center gap-2">
+            className="w-full bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-4 border-2 border-blue-300 shadow-lg">
+            <p className="text-xs sm:text-sm text-blue-600 font-bold mb-1.5 flex items-center gap-2">
               <span>🧠</span> まっているあいだにクイズ！
             </p>
             <p className="text-sm sm:text-base md:text-lg text-slate-800 font-bold mb-3 flex items-center gap-2">
@@ -226,8 +226,8 @@ export function ImageGeneratingView({
             <motion.div key={currentFactIndex}
               initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.4 }}
-              className="w-full bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 border-2 border-yellow-300 shadow-lg">
-              <p className="text-xs sm:text-sm text-yellow-600 font-bold mb-2 flex items-center gap-2">
+              className="w-full bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-4 border-2 border-yellow-300 shadow-lg">
+              <p className="text-xs sm:text-sm text-yellow-600 font-bold mb-1.5 flex items-center gap-2">
                 <span>💡</span> まめちしき
               </p>
               <p className="text-sm sm:text-base md:text-lg text-slate-700 font-medium flex items-start gap-2 leading-relaxed">
