@@ -104,7 +104,9 @@ export async function logConversationServer(params: LogConversationParams): Prom
       conversationId,
       response.pairs?.length || 0,
       duration,
-      response.agentPipeline
+      response.agentPipeline,
+      curiosityType,
+      selectedExpert
     );
     console.log('[ConversationLoggerServer] Conversation completed');
 

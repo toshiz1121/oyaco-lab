@@ -13,6 +13,9 @@ export default function Home() {
   const { user, activeChildId, loading } = useAuth();
   const router = useRouter();
 
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
   // 認証チェック
   useEffect(() => {
     if (!loading) {
@@ -62,7 +65,7 @@ export default function Home() {
       {/* フッター（固定・最小限） */}
       <footer className="shrink-0 bg-white/90 border-t border-sky-200 px-3 py-1.5 sm:py-2 z-10 safe-area-bottom">
         <div className="max-w-6xl mx-auto text-center">
-          <p className="text-[10px] sm:text-xs text-sky-600">© 2024 AIキッズサイエンスラボ</p>
+          <p className="text-[10px] sm:text-xs text-sky-600">© {currentYear} AIキッズサイエンスラボ</p>
         </div>
       </footer>
     </div>

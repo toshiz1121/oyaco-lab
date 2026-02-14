@@ -1,3 +1,19 @@
+/**
+ * useAgentChat — チャットフロー全体を管理するフック
+ *
+ * 【処理の流れ】
+ *  1. ユーザーが質問を入力
+ *  2. Orchestrator が最適な博士を選定（Server Action: decideAgentAction）
+ *  3. スポットライト演出（前回と違う博士の場合のみ）
+ *  4. 選定された博士が回答を生成（Server Action: generateResponseAction）
+ *     - 回答テキスト / 画像 / 音声 / 深掘り質問を並列生成
+ *  5. 結果画面（ResultView）に遷移
+ *  6. Firestore に会話ログを保存
+ *
+ * 【ビューモード】
+ *  input → selecting → imageGenerating → result
+ */
+
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { decideAgentAction, generateResponseAction } from "@/app/actions";
@@ -6,18 +22,9 @@ import { AgentResponse, AgentRole } from "@/lib/agents/types";
 import { useAuth } from '@/contexts/AuthContext';
 import { useConversationLogger } from "./useConversationLogger";
 
-/**
- * ビューの表示モード
- * - input: 質問入力画面
- * - selecting: エキスパート選定中（スポットライト表示）
- * - imageGenerating: 画像生成中
- * - result: 結果表示
- */
+/** ビューの表示モード */
 type ViewMode = 'input' | 'selecting' | 'imageGenerating' | 'result';
 
-/**
- * useAgentChatフックのプロパティ
- */
 interface UseAgentChatProps {
   /** 初期質問（セッション作成時のタイトルに使用） */
   initialQuestion?: string;
@@ -25,71 +32,34 @@ interface UseAgentChatProps {
   onNewSession?: (session: ChatSession) => void;
 }
 
-/**
- * エージェントチャット機能を管理するカスタムフック
- * 
- * 主な機能:
- * - ユーザーの質問に対するエキスパート選定
- * - 選定されたエキスパートによる回答生成
- * - 画像生成の進捗管理
- * - チャット履歴の永続化
- * - ビューモードの状態管理
- */
 export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProps) {
-  // ========================================
-  // 状態管理
-  // ========================================
-
-  // 現在アクティブな子供の情報を取得する
+  // --- 認証情報 ---
   const { activeChildId } = useAuth();
-  
-  /** 現在のビュー表示モード */
+
+  // --- 画面状態 ---
   const [viewMode, setViewMode] = useState<ViewMode>('input');
-  
-  /** 現在処理中の質問テキスト */
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
-  
-  /** 選定されたエキスパートの役割 */
   const [selectedExpert, setSelectedExpert] = useState<AgentRole | undefined>(undefined);
-  
-  /** エキスパート選定の理由 */
   const [selectionReason, setSelectionReason] = useState<string | undefined>(undefined);
-  
-  /** 最新のエージェント応答データ */
   const [latestResponse, setLatestResponse] = useState<AgentResponse | null>(null);
-  
-  /** 現在のチャットセッションID */
   const [sessionId, setSessionId] = useState<string | null>(null);
-  
-  /** API呼び出しが完了したかどうか */
+
+  // --- 生成進捗 ---
   const [isApiComplete, setIsApiComplete] = useState(false);
-  
-  /** 画像生成の進捗率（0-100） */
   const [generationProgress, setGenerationProgress] = useState(0);
-  
-  /** 音声生成中かどうか */
   const [isAudioGenerating, setIsAudioGenerating] = useState(false);
-  
-  /** 音声生成の進捗率（0-100） */
   const [audioProgress, setAudioProgress] = useState(0);
 
-  // childId を activeChildId から取得
-  const { 
+  // --- 会話ログ ---
+  const {
     startCuriosityTypeEstimation,
-    logCurrentConversation, 
-    isLogging 
-  } = useConversationLogger(
-    activeChildId || 'child1' // フォールバック
-  );
+    logCurrentConversation,
+    isLogging
+  } = useConversationLogger(activeChildId || 'child1');
 
-  // ========================================
-  // セッション初期化
-  // ========================================
-  
-  /**
-   * コンポーネントマウント時にチャットセッションを作成
-   * セッションIDが未設定の場合のみ実行される
-   */
+  // --------------------------------------------------
+  // セッション初期化（マウント時に1回だけ）
+  // --------------------------------------------------
   useEffect(() => {
     if (!sessionId) {
       const session = createSession(initialQuestion || "新しい対話");
@@ -98,80 +68,42 @@ export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProp
     }
   }, [initialQuestion, sessionId, onNewSession]);
 
-  // ========================================
-  // 進捗バーのアニメーション
-  // ========================================
-  
-  /**
-   * 画像生成中の進捗バーをシミュレート
-   * 
-   * - API完了前: 0-90%の範囲でランダムに増加
-   * - API完了後: 100%に設定
-   * 
-   * ユーザーに処理が進行中であることを視覚的にフィードバック
-   */
+  // --------------------------------------------------
+  // 画像生成中の進捗バーアニメーション
+  // API 完了前は 0→90% をゆっくり進め、完了後に 100% へ
+  // --------------------------------------------------
   useEffect(() => {
     if (viewMode === 'imageGenerating' && !isApiComplete) {
       const interval = setInterval(() => {
-        setGenerationProgress((prev) => {
-          if (prev < 90) {
-            return prev + Math.random() * 3 + 1;
-          }
-          return prev;
-        });
+        setGenerationProgress((prev) => (prev < 90 ? prev + Math.random() * 3 + 1 : prev));
       }, 300);
       return () => clearInterval(interval);
     }
-    
     if (isApiComplete && viewMode === 'imageGenerating') {
       setGenerationProgress(100);
     }
   }, [viewMode, isApiComplete]);
 
-  // ========================================
-  // 結果画面への自動遷移
-  // ========================================
-  
-  /**
-   * 画像生成と音声生成が完了したら結果画面に自動遷移
-   * 
-   * viewModeに関係なく、生成完了したら結果画面へ遷移
-   */
+  // --------------------------------------------------
+  // 生成完了 → 結果画面へ自動遷移（500ms ディレイ）
+  // --------------------------------------------------
   useEffect(() => {
     if (isApiComplete && latestResponse) {
-      console.log('[useAgentChat] 生成完了 → 結果画面に遷移');
-      // 少し遅延を入れてスムーズに遷移
-      const timer = setTimeout(() => {
-        setViewMode('result');
-      }, 500);
+      const timer = setTimeout(() => setViewMode('result'), 500);
       return () => clearTimeout(timer);
     }
   }, [isApiComplete, latestResponse]);
 
-  // ========================================
-  // イベントハンドラー
-  // ========================================
-  
-  /**
-   * ユーザーからの質問を処理
-   * 
-   * 処理フロー:
-   * 1. 状態の初期化とユーザーメッセージの保存
-   * 2. エキスパート選定（decideAgentAction）
-   * 3. スポットライトアニメーション（前回と異なるエキスパートの場合）
-   * 4. 回答生成（generateResponseAction）
-   * 5. アシスタントメッセージの保存
-   * 6. 結果画面への遷移
-   * 
-   * @param question - ユーザーの質問テキスト
-   */
+  // --------------------------------------------------
+  // メイン処理: ユーザーの質問を受け取って回答を生成
+  // --------------------------------------------------
   const handleQuestion = async (question: string) => {
     if (!sessionId) return;
-    
+
     setCurrentQuestion(question);
     const prevExpert = selectedExpert;
-    
-    // 状態をリセット
+
+    // 状態リセット
     setViewMode('selecting');
     setSelectedExpert(undefined);
     setIsApiComplete(false);
@@ -179,38 +111,28 @@ export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProp
     setIsAudioGenerating(false);
     setAudioProgress(0);
 
-    // 音声進捗インターバルの参照を保持
     let audioProgressInterval: NodeJS.Timeout | null = null;
 
     try {
-      // ユーザーメッセージをセッションに保存
-      addMessageToSession(sessionId, {
-        role: 'user',
-        content: question
-      });
+      // ユーザーメッセージをローカルセッションに保存
+      addMessageToSession(sessionId, { role: 'user', content: question });
 
-      // 好奇心タイプ判定をバックグラウンドで開始（解説生成と並行実行）
+      // 好奇心タイプ判定をバックグラウンドで先行開始
       if (activeChildId) {
-        console.log('[useAgentChat] Starting curiosity type estimation in background...');
         startCuriosityTypeEstimation(question);
       }
 
-      // 会話履歴を構築（前の質問+回答のペアを含める）
+      // 直前の会話コンテキストを構築
       const history: { role: string; content: string }[] = [];
       if (latestResponse) {
-        // 前回の質問も含めて会話の流れを維持
         if (currentQuestion && currentQuestion !== question) {
           history.push({ role: 'user', content: currentQuestion });
         }
         history.push({ role: 'assistant', content: latestResponse.text });
       }
 
-      // ========================================
-      // フェーズ1: エキスパート選定
-      // ========================================
-      console.log('[useAgentChat] フェーズ1: エージェント選定中...');
+      // --- フェーズ1: 博士選定 ---
       const decisionResult = await decideAgentAction(question, history);
-
       if (!decisionResult.success || !decisionResult.agentId) {
         toast.error("博士の選定に失敗しました");
         setViewMode('input');
@@ -219,32 +141,24 @@ export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProp
 
       const newExpert = decisionResult.agentId;
       const newSelectionReason = decisionResult.selectionReason;
-      
-      console.log(`[useAgentChat] 選定されたエージェント: ${newExpert}`);
-      
       setSelectedExpert(newExpert);
       setSelectionReason(newSelectionReason);
-      
-      // 前回と同じエキスパートの場合はスポットライトアニメーションをスキップ
+
+      // 同じ博士ならスポットライト演出をスキップ
       if (newExpert === prevExpert) {
-        console.log('[useAgentChat] 同じエキスパートのためスポットライトをスキップ');
         setViewMode('imageGenerating');
       }
 
-      // ========================================
-      // フェーズ2: 回答生成
-      // ========================================
-      console.log('[useAgentChat] フェーズ2: 回答生成中...');
-      
-      // 音声生成の進捗シミュレーションを開始
+      // --- フェーズ2: 回答生成 ---
+      // 音声進捗のシミュレーション開始
       setIsAudioGenerating(true);
       audioProgressInterval = setInterval(() => {
         setAudioProgress(prev => Math.min(prev + 8, 90));
       }, 200);
-      
+
       const responseResult = await generateResponseAction(newExpert, question, history, 'default');
 
-      // インターバルをクリア
+      // 進捗インターバルをクリア
       if (audioProgressInterval) {
         clearInterval(audioProgressInterval);
         audioProgressInterval = null;
@@ -258,15 +172,9 @@ export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProp
         return;
       }
 
-      // 選定理由を応答データに追加
-      const responseData = {
-        ...responseResult.data,
-        selectionReason: newSelectionReason
-      };
+      const responseData = { ...responseResult.data, selectionReason: newSelectionReason };
 
-      console.log('[useAgentChat] 回答生成完了');
-
-      // アシスタントメッセージをセッションに保存
+      // ローカルセッションに保存
       addMessageToSession(sessionId, {
         role: 'assistant',
         content: responseData.text,
@@ -278,68 +186,45 @@ export function useAgentChat({ initialQuestion, onNewSession }: UseAgentChatProp
       });
 
       setLatestResponse(responseData);
-      
-      // 音声生成完了
       setAudioProgress(100);
-      setTimeout(() => {
-        setIsAudioGenerating(false);
-      }, 300);
-      
+      setTimeout(() => setIsAudioGenerating(false), 300);
       setIsApiComplete(true);
 
-      // Firestoreに会話ログを保存
-      // 子供に紐付けて会話ログを保存するため
-      if(activeChildId) {
-        console.log('[useAgentChat] 会話ログを保存中...', { activeChildId, question: question.substring(0, 30) });
+      // --- Firestore に会話ログを保存 ---
+      if (activeChildId) {
         try {
           await logCurrentConversation(question, newExpert, newSelectionReason, responseData);
-          console.log('[useAgentChat] 会話ログの保存に成功しました');
-        } catch (error) {
-          console.error('[useAgentChat] 会話ログの保存に失敗しました:', error);
+        } catch {
+          // ログ保存失敗はユーザー体験に影響しないため握りつぶす
         }
-      } else {
-        console.warn('[useAgentChat] activeChildIdが設定されていないため、会話ログを保存できません');
       }
-
     } catch (e) {
       console.error('[useAgentChat] エラー:', e);
       toast.error("通信エラー");
       setViewMode('input');
       setIsAudioGenerating(false);
       setAudioProgress(0);
-      
-      // エラー時もインターバルをクリア
-      if (audioProgressInterval) {
-        clearInterval(audioProgressInterval);
-      }
+      if (audioProgressInterval) clearInterval(audioProgressInterval);
     }
   };
 
-  /**
-   * スポットライトアニメーション完了時のハンドラー
-   * 画像生成画面に遷移する
-   */
+  /** スポットライト演出が終わったら画像生成画面へ遷移 */
   const handleSpotlightComplete = () => {
     setViewMode('imageGenerating');
   };
 
-  // ========================================
-  // 戻り値
-  // ========================================
-  
   return {
     // 状態
-    viewMode,              // 現在のビューモード
-    currentQuestion,       // 処理中の質問
-    selectedExpert,        // 選定されたエキスパート
-    selectionReason,       // 選定理由
-    latestResponse,        // 最新の応答データ
-    generationProgress,    // 生成進捗率
-    isAudioGenerating,     // 音声生成中フラグ
-    audioProgress,         // 音声生成進捗率
-    
+    viewMode,
+    currentQuestion,
+    selectedExpert,
+    selectionReason,
+    latestResponse,
+    generationProgress,
+    isAudioGenerating,
+    audioProgress,
     // アクション
-    handleQuestion,        // 質問処理ハンドラー
-    handleSpotlightComplete, // スポットライト完了ハンドラー
+    handleQuestion,
+    handleSpotlightComplete,
   };
 }
