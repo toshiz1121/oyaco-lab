@@ -43,20 +43,23 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
   useBackgroundPairGenerator(pairs, currentIndex, response.agentId, (pairId, updates) => {
     setPairs(prev => prev.map(p => {
       if (p.id !== pairId) return p;
-      return {
+      const updated = {
         ...p,
         ...(updates.audioData !== undefined ? { audioData: updates.audioData } : {}),
         ...(updates.imageUrl !== undefined ? { imageUrl: updates.imageUrl } : {}),
         ...(updates.status !== undefined ? { status: updates.status } : {}),
         ...(updates.status === 'ready' ? { generatedAt: new Date().toISOString() } : {}),
       };
-    }));
 
-    if (updates.audioData) {
-      const audioUrl = `data:audio/wav;base64,${updates.audioData}`;
-      const audio = new Audio(audioUrl);
-      audioCache.current.set(pairId, audio);
-    }
+      // 音声データが追加されたらキャッシュに登録
+      if (updates.audioData && !audioCache.current.has(pairId)) {
+        const audioUrl = `data:audio/wav;base64,${updates.audioData}`;
+        const audio = new Audio(audioUrl);
+        audioCache.current.set(pairId, audio);
+      }
+
+      return updated;
+    }));
   });
 
   /**
@@ -266,14 +269,6 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
             }`}>
               <p className="text-xs sm:text-sm md:text-base leading-relaxed pr-6 sm:pr-7">{currentPair.text}</p>
 
-              {isWaitingForAudio && (
-                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-1.5 mt-1.5 text-blue-500">
-                  <Loader2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-spin" />
-                  <span className="text-[10px] sm:text-xs font-medium">おんせいをじゅんびちゅう...</span>
-                </motion.div>
-              )}
-
               <Button variant="ghost" size="icon"
                 className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 text-slate-400 hover:text-blue-500 h-6 w-6 sm:h-7 sm:w-7"
                 onClick={() => { stopAudio(); playAudio(currentPair); }}
@@ -282,6 +277,18 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
               </Button>
             </div>
           </motion.div>
+
+          {/* 音声準備中の目立つ表示 */}
+          {isWaitingForAudio && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }} 
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-2 mt-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full shadow-lg"
+            >
+              <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+              <span className="text-sm sm:text-base font-bold">🎵 おんせいをじゅんびちゅう...</span>
+            </motion.div>
+          )}
 
           {/* ナビゲーション */}
           <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}

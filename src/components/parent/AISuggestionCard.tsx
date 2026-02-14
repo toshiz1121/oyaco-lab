@@ -79,6 +79,11 @@ export function AISuggestionCard({ childId }: AISuggestionCardProps) {
                 <div className="flex items-start gap-2">
                   <span className="text-xl shrink-0">{suggestion.emoji}</span>
                   <div className="flex-1 min-w-0">
+                    {suggestion.relatedQuestion && (
+                      <p className="text-xs text-indigo-600 bg-indigo-50 rounded px-2 py-0.5 mb-1.5 inline-block">
+                        💬 「{suggestion.relatedQuestion}」に関連
+                      </p>
+                    )}
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-medium text-amber-700">
                         {suggestion.situation}

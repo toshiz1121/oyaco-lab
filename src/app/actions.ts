@@ -84,37 +84,13 @@ export async function generateResponseAction(
 
     const initialSteps = responseData.steps || [];
 
-    // ステップ2: レビュー・深掘り質問・画像・音声を最大限並列実行
-    // educatorReviewのプロンプトでvisualDescriptionは変更不可と指示しているため、
-    // 画像生成はレビュー完了を待たずに開始できる
-    console.log(`[DEBUG] ステップ2: レビュー + 深掘り質問 + 画像 + 音声を並列実行...`);
+    // ステップ2: まずEducatorレビューを実行（テキスト修正の可能性があるため）
+    // レビュー後のテキストで音声を生成する必要がある
+    console.log(`[DEBUG] ステップ2: Educatorレビューを実行...`);
 
-    const combinedPrompt = initialSteps.length > 0
-      ? generateCombinedImagePrompt(initialSteps)
+    const reviewResult = agentId !== 'educator'
+      ? await educatorReview(agentId, question, responseData.text, initialSteps)
       : null;
-
-    // 並列タスクを構築
-    const reviewPromise = agentId !== 'educator'
-      ? educatorReview(agentId, question, responseData.text, initialSteps)
-      : Promise.resolve(null);
-
-    const followUpPromise = generateFollowUpQuestions(agentId, question, responseData.text, initialSteps);
-
-    const imagePromise = combinedPrompt
-      ? generateIllustration(combinedPrompt)
-      : Promise.resolve(undefined);
-
-    const audioPromise = initialSteps.length > 0
-      ? generateSpeech(initialSteps[0].text, agents[agentId].voiceName)
-      : Promise.resolve(null);
-
-    // 全タスクを並列実行
-    const [reviewResult, followUpQuestions, imageUrl, audioData] = await Promise.all([
-      reviewPromise,
-      followUpPromise,
-      imagePromise,
-      audioPromise,
-    ]);
 
     // レビュー結果を反映（テキストのみ。visualDescriptionは変更されない）
     let finalText = responseData.text;
@@ -124,6 +100,30 @@ export async function generateResponseAction(
       finalText = reviewResult.revisedText || finalText;
       finalSteps = reviewResult.revisedSteps;
     }
+
+    // 深掘り質問・画像・音声を並列実行
+    // 音声はレビュー後の確定テキストで生成するため、レビュー完了後に実行
+    console.log(`[DEBUG] ステップ3: 深掘り質問 + 画像 + 音声を並列実行...`);
+
+    const combinedPrompt = finalSteps.length > 0
+      ? generateCombinedImagePrompt(finalSteps)
+      : null;
+
+    const followUpPromise = generateFollowUpQuestions(agentId, question, finalText, finalSteps);
+
+    const imagePromise = combinedPrompt
+      ? generateIllustration(combinedPrompt)
+      : Promise.resolve(undefined);
+
+    const audioPromise = finalSteps.length > 0
+      ? generateSpeech(finalSteps[0].text, agents[agentId].voiceName)
+      : Promise.resolve(null);
+
+    const [followUpQuestions, imageUrl, audioData] = await Promise.all([
+      followUpPromise,
+      imagePromise,
+      audioPromise,
+    ]);
 
     // 文章-画像ペアを構築
     const pairs = createSentenceImagePairs(finalSteps);
