@@ -13,7 +13,7 @@ Canvaのスライド1枚ごとに以下の構成で作ってください。
 
 | シーン | 秒数 | 画面イメージ (Canva素材検索ワード) | テロップ (画面に大きく出す文字) | ナレーション / 字幕 |
 | :--- | :--- | :--- | :--- | :--- |
-| **1** | 0:00-0:07 | ![Scene 1](assets/scene_01_busy_parents.png)<br>忙しい親、散らかった部屋、パソコン<br>*(Busy mom/dad, stressed)* | 親子の会話<br>1日、何分だと思いますか？ | 共働き世帯が増え、親子の会話時間は... |
+| **1** | 0:00-0:07 | ![Scene 1](assets/scene_01_busy_parents.png)<br>忙しい親、散らかった部屋、パソコン<br>*(Busy mom/dad, stressed)* | 親子の会話<br>1日、何分だと思いますか？ | 親子の会話、1日、何分だと思いますか？共働き世帯が増え、親子の会話時間は... |
 | **2** | 0:07-0:12 | ![Scene 2](assets/scene_02_clock_ticking.png)<br>時計の針がぐるぐる回る、砂時計<br>*(Clock ticking fast)* | わずか<br>25分 | たったの25分と言われています。 |
 | **3** | 0:12-0:18 | ![Scene 3](assets/scene_03_curious_child.png)<br>子供が「？」マークに囲まれている<br>*(Curious child, question marks)* | 子供の質問<br>1日 300回 | 一方で、4歳の子供がする質問は1日300回。 |
 | **4** | 0:18-0:24 | ![Scene 4](assets/scene_04_5_seconds.png)<br>数字がドンと出る<br>*(Impact font)* | 1問あたり<br>たった「5秒」 | 親が1つの質問に向き合える時間は、わずか5秒。これでは無理です。 |
@@ -28,7 +28,7 @@ Canvaのスライド1枚ごとに以下の構成で作ってください。
 | シーン | 秒数 | 画面イメージ (Canva素材検索ワード) | テロップ (画面に大きく出す文字) | ナレーション / 字幕 |
 | :--- | :--- | :--- | :--- | :--- |
 | **6** | 0:30-0:35 | ![Scene 6](assets/scene_06_oyaco_logo.png)<br>**アプリのロゴ** または タイトル画面 | **OyaCo Lab**<br>親子の会話を<br>「ネタ切れ」から救う | その課題を解決するのが、「OyaCo Lab」です。 |
-| **7** | 0:35-0:45 | ![Scene 7](assets/scene_07_connection_bridge.png)<br>3人の関係図（子供・AI・親）<br>*(Connection, Network, Bridge)* | ただのAIじゃない。<br>「親子をつなぐ架け橋」 | AIが子供の「好奇心の相棒」になり、そこで得た発見を親へ「会話のネタ」として届けます。 |
+| **7** | 0:35-0:45 | ![Scene 7](assets/scene_07_connection_bridge.png)<br>3人の関係図（子供・AI・親）<br>*(Connection, Network, Bridge)* | AIが親子をつなぐ。<br>「会話の橋渡し」 | AIが子供の発見を受け止め、親に話しかけやすい“会話のきっかけ”へ変えて届けます。 |
 
 ---
 
@@ -36,12 +36,7 @@ Canvaのスライド1枚ごとに以下の構成で作ってください。
 
 **BGM:** 軽快なリズム
 
-| シーン | 秒数 | 画面イメージ | テロップ (画面に大きく出す文字) | ナレーション / 字幕 |
-| :--- | :--- | :--- | :--- | :--- |
-| **8** | 0:45-0:55 | ![Scene 8](assets/scene_08_ai_doctors.png)<br>**【動画】** 子供が質問→博士が登場 | 7人のAI博士が<br>子供の「なぜ？」に回答 | 子供が質問すると、その分野の専門家AIが登場。今回はニュートン博士です。 |
-| **9** | 0:55-1:05 | ![Scene 9](assets/scene_09_thinking_animation.png)<br>**【動画】** 博士の考え中アニメーション | 待ち時間を<br>「ワクワク」に変える | 生成の待ち時間も、博士が考えている演出で子供を飽きさせません。 |
-| **10** | 1:05-1:15 | ![Scene 10](assets/scene_10_parent_notification.png)<br>**【動画】** 親のスマホに通知が来る画面 | ここがポイント！<br>親への「ネタ提供」 | そして最大の特徴。子供の興味をAIが分析し、親へ「今、こんなこと話してみて！」と通知します。 |
-| **11** | 1:15-1:25 | ![Scene 11](assets/scene_11_happy_conversation.png)<br>親子のイラスト、会話している様子<br>*(Happy family talking)* | AIが黒子になり<br>会話が弾む | 専門知識がなくても大丈夫。AIからのパスを受け取るだけで、親子の会話が弾みます。 |
+デモ部分の詳細なカット割り・ナレーションは [`plans/video_editing_plan_visual.md`](plans/video_editing_plan_visual.md:1) を参照してください。
 
 ---
 

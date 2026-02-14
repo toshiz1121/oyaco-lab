@@ -11,7 +11,7 @@
 | **A-1: タイトルスライド**<br>子供の体験 | <img src="./assets/title_slide_part_a_child.png" width="300"> | 00:05- | Part A開始の区切り。<br>テキスト案: 「Part A: 子供の体験」 | 「まずは学習画面。学びが自分ごとになります。」 |
 | **A-2: 質問入力**<br>音声で簡単に質問 | <img src="../output/video_analysis_5sec_processed/frame_0001.png" width="300"> | 00:10- | マイクに向かって話しかけるシーン。<br>「うんうん、きいてるよ！」で音声入力が直感的。 | 「ボタンを押して話すだけ。音声で質問できます。」 |
 | **A-3: 誰に聞く？**<br>博士の選定 | <img src="../output/video_analysis_5sec_processed/frame_0004.png" width="300"> | 00:25- | 質問内容に応じて博士候補が表示される。<br>「だれにきくかかんがえているよ…」の演出。 | 「質問に合わせて博士を選びます。先生が決まる瞬間。」 |
-| **A-4: 博士決定**<br>選定理由の提示 | <img src="../output/video_analysis_5sec_processed/frame_0005.png" width="300"> | 00:30- | ニュートン博士に決定。<br>「えらばれたりゆう」で納得感を演出。 | 「選ばれた理由が見えるから、納得して聞けます。」 |
+| **A-4: 博士決定**<br>選定理由の提示 | <img src="../output/video_analysis_5sec_processed/frame_0005.png" width="300"> | 00:30- | ニュートン博士に決定。<br>「えらばれたりゆう」で納得感を演出。<br>※5フレーム目の表記は「**5分**」に修正（55分に見えないよう明確に）。 | 「選ばれた理由が見えるから、納得して聞けます。」 |
 | **A-5: 待機画面**<br>飽きさせない工夫 | <img src="../output/video_analysis_5sec_processed/frame_0006.png" width="300"> | 00:35- | 思考中アニメーション、二段階プログレス、クイズ&豆知識。<br>待ち時間も「遊び」に変える。<br>(frame_0006〜0009あたりを使用) | 「待ち時間もクイズで楽しく。進捗が見えます。」 |
 | **A-6: 博士の回答**<br>専門家による解説 | <img src="../output/video_analysis_5sec_processed/frame_0011.png" width="300"> | 01:00- | 4コマ解説とテキストで分かりやすく説明。<br>ステップ表示（1/4など）でテンポよく。<br>(frame_0010〜0013あたりを使用) | 「博士が楽しく解説。4コマで理解できます。」 |
 | **A-7: 次の発見へ**<br>探究の連鎖 | <img src="../output/video_analysis_5sec_processed/frame_0014.png" width="300"> | 01:15- | 回答の最後に「もっとしりたい？」で関連質問を提示。<br>単発で終わらず好奇心を広げる。 | 「“もっと知りたい”が次の発見へ。」 |
