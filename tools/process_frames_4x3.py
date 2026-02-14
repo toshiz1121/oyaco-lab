@@ -13,8 +13,8 @@ DEST_DIR = Path("output/video_analysis_5sec_processed")
 
 # Crop settings based on inspection of frame_0001.png
 # Original size: 1640x2360
-# Remove browser UI at top by cropping 260px from top.
-CROP_TOP = 260
+# Remove browser UI at top by cropping 360px from top.
+CROP_TOP = 360
 
 # Output target (4:3) based on cropped height 2100 -> width 2800
 TARGET_HEIGHT = 2100
