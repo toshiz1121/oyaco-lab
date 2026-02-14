@@ -30,7 +30,7 @@ export function getFirebaseConfig() {
   };
 
   console.log('[Firebase Config] Using config from environment variables');
-  console.log('[Firebase Config] Firestore DB Name:', config.firestoreDbName || 'kidds-kikkake-lab');
+  console.log('[Firebase Config] Firestore DB Name:', config.firestoreDbName || 'Hard oyaco-lab');
 
   // 設定値の検証（firestoreDbNameは任意なので除外）
   const requiredConfig = {

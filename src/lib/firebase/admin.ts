@@ -1,12 +1,5 @@
 /**
  * Firebase Admin SDK 初期化（サーバーサイド専用）
- *
- * プロジェクト統一構成:
- * - FirebaseとCloud Runが同じGCPプロジェクト (zenn202602) で動作
- * - Application Default Credentials (ADC) を使用
- * - サービスアカウントキー不要
- *
- * クライアント用の firebase/config.ts とは別物。混同しないこと。
  */
 
 import { initializeApp, getApps, type App } from 'firebase-admin/app';
@@ -54,9 +47,9 @@ function getAdminApp(): App {
  */
 export function getAdminDb(): Firestore {
   if (_adminDb) return _adminDb;
-  const dbName = process.env.FIRESTORE_DB_NAME || 'kidds-kikkake-lab';
+  const dbName = process.env.FIRESTORE_DB_NAME || 'oyaco-lab';
   if (!process.env.FIRESTORE_DB_NAME) {
-    console.warn('[Firebase Admin] FIRESTORE_DB_NAME is not set, using default: kidds-kikkake-lab');
+    console.warn('[Firebase Admin] FIRESTORE_DB_NAME is not set, using default: oyaco-lab');
   }
   _adminDb = getFirestore(getAdminApp(), dbName);
   return _adminDb;
