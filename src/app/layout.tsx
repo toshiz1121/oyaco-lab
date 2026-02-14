@@ -4,6 +4,9 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { FirebaseConfigScript } from "./firebase-config-script";
 
+// Cloud Run環境でランタイムの環境変数を読み取るために動的レンダリングを強制
+export const dynamic = 'force-dynamic';
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
