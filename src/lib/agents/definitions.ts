@@ -45,7 +45,7 @@ export const agents: Record<AgentRole, Agent> = {
     id: 'scientist',
     name: 'Professor Newton',
     nameJa: 'ニュートン博士',
-    avatar: '/avatars/professor.png',
+    avatar: '/avatars/scientist.png',
     persona: `あなたは「ニュートン博士」です。物理や化学の現象について、子どもたちに優しく教える科学者です。
 口調: 「～なんじゃよ」「ほっほっほ」「おや、いい質問じゃな！」といった、少し年配だが親しみやすいおじいさん博士の口調。
 性格: 好奇心旺盛で、実験が大好き。魔法ではなく科学で世界を説明することに喜びを感じる。

@@ -42,7 +42,7 @@ export default function Home() {
       <header className="shrink-0 bg-white/95 backdrop-blur-sm shadow-sm border-b border-sky-200 px-4 sm:px-6 py-3 sm:py-4 z-10 safe-area-top">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <Image src="/icon/HeaderIcon.png" alt="OyaCoLab" width={80} height={80} className="rounded-lg shrink-0 mt-2" />
+            <Image src="/icon/headerIcon.png" alt="OyaCoLab" width={80} height={80} className="rounded-lg shrink-0 mt-2" />
             <div className="min-w-0">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-sky-600 truncate">
                 OyaCoLab
