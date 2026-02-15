@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 from PIL import Image
@@ -21,7 +22,7 @@ TARGET_HEIGHT = 2100
 TARGET_WIDTH = 2800
 
 # Background colors
-BG_COLOR_DEFAULT = (238, 242, 248)  # #EEF2F8
+BG_COLOR_DEFAULT = (248, 232, 240)  # #F8E8F0 (淡いピンク)
 BG_COLOR_A = (248, 232, 240)  # #F8E8F0 (淡いピンク)
 BG_COLOR_B = (232, 248, 236)  # #E8F8EC (淡い緑)
 
@@ -43,7 +44,7 @@ def background_for_frame(frame_name: str) -> tuple[int, int, int]:
     return BG_COLOR_DEFAULT
 
 
-def process_image(path: Path) -> None:
+def process_image(path: Path, dest_dir: Path) -> None:
     img = Image.open(path)
     width, height = img.size
     if height <= CROP_TOP:
@@ -75,23 +76,41 @@ def process_image(path: Path) -> None:
     y = (target_height - cropped_height) // 2
     canvas.paste(cropped, (x, y))
 
-    DEST_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = DEST_DIR / path.name
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    out_path = dest_dir / path.name
     canvas.save(out_path)
 
 
 def main() -> None:
-    if not SRC_DIR.exists():
-        raise SystemExit(f"Source directory not found: {SRC_DIR}")
+    parser = argparse.ArgumentParser(
+        description="Crop browser UI and pad frames to 4:3 with background."
+    )
+    parser.add_argument(
+        "--src",
+        default=str(SRC_DIR),
+        help="Source directory containing frame_*.png",
+    )
+    parser.add_argument(
+        "--dest",
+        default=str(DEST_DIR),
+        help="Destination directory for processed frames",
+    )
+    args = parser.parse_args()
 
-    images = sorted(SRC_DIR.glob("frame_*.png"))
+    src_dir = Path(args.src)
+    dest_dir = Path(args.dest)
+
+    if not src_dir.exists():
+        raise SystemExit(f"Source directory not found: {src_dir}")
+
+    images = sorted(src_dir.glob("frame_*.png"))
     if not images:
-        raise SystemExit(f"No frames found in {SRC_DIR}")
+        raise SystemExit(f"No frames found in {src_dir}")
 
     for image_path in images:
-        process_image(image_path)
+        process_image(image_path, dest_dir)
 
-    print(f"Processed {len(images)} frames -> {DEST_DIR}")
+    print(f"Processed {len(images)} frames -> {dest_dir}")
 
 
 if __name__ == "__main__":
