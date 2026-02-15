@@ -42,15 +42,16 @@ Canvaのスライド1枚ごとに以下の構成で作ってください。
 
 ## Part 4: The Technology (技術スタック・アーキテクチャ)
 
-**BGM:** 知的でクールな、テック系のBGM
+このセクションの詳細は、別途作成した詳細ストーリーボードを参照してください。
 
-| シーン | 秒数 | 画面イメージ (Canva素材検索ワード) | テロップ (画面に大きく出す文字) | ナレーション / 字幕 |
-| :--- | :--- | :--- | :--- | :--- |
-| **Tech-1** | 1:25-1:30 | ![Scene 13](assets/scene_12_architecture.png)<br>※チャットで共有いただいた「Cloud Native Architecture」の図を使用してください。<br><br>**システム全体像 (ユーザー提供図)**<br>Next.js 16 on Cloud Runを中心としたモダンな構成。<br>CI/CDパイプラインとVertex AI/Firebaseとの連携。<br>Gemini 2.5 Flashシリーズ (Text/Image/TTS) のフル活用。 | Cloud Native Architecture<br>Next.js 16 × Gemini 2.5 | 裏側では、Cloud Run上のNext.js 16と、最新のGemini 2.5 Flashシリーズが連携して動いています。 |
-| **Tech-2** | 1:30-1:35 | ![Scene 13](assets/scene_13_gemini_flash.png)<br>**Gemini 2.5 Flash & 低遅延**<br>Geminiのロゴと稲妻エフェクト。<br>「Latency」のグラフがガクンと下がるイメージや、時計の針がゆっくりになる演出。 | Powered by<br>Gemini 2.5 Flash<br>圧倒的な低遅延 | 全てのモダリティ（テキスト・画像・音声）でGemini 2.5 Flashを採用。<br>子供の好奇心を逃さない、圧倒的なレスポンススピードを実現しました。 |
-| **Tech-3** | 1:35-1:43 | ![Scene 15](assets/scene_15_cloud_run.png)<br>**並列生成パイプライン**<br>シーケンシャルな処理（Text→Image→Audio）と、パラレルな処理（Text + Image + Audio）の比較アニメーション。<br>タイムラインバーが短縮される様子。 | Parallel Generation<br>並列生成による<br>UX最適化 | さらに、テキスト生成の裏で画像と音声を並列に生成。<br>「待ち時間」を極限までゼロに近づけています。 |
-| **Tech-4** | 1:43-1:53 | ![Scene 14](assets/scene_14_react_agent.png)<br>**ReAct Agent (Parent Advisor)**<br>親エージェントが「思考」している様子。<br>Thought（思考）→ Action（ツール実行）→ Observation（結果）のサイクルを図解。<br>具体的なログ（「恐竜に興味がある…」）を解析している画面。 | ReAct Agent<br>自律的な思考と提案 | 親へのアドバイスは、ReActパターンを用いたエージェントが担当。<br>会話ログを分析し、「今、何を話すべきか」を自律的に思考して提案します。 |
-| **Tech-5** | 1:53-2:00 | **Tech Stack Summary**<br>使用技術のアイコン一覧。<br>Next.js, Firebase, Cloud Run, Vertex AI。<br>最後に「Next.js 16 Server Actions」をハイライト。 | Built with Modern Stack<br>Next.js 16<br>Firebase<br>Vertex AI | Next.js 16のServer ActionsとFirebaseを組み合わせ、<br>セキュアかつスケーラブルな基盤を構築しました。 |
+👉 [**Technical Deep Dive Storyboard (video_architecture_storyboard.md)**](plans/video_architecture_storyboard.md)
+
+*   **尺:** 約60秒
+*   **内容:**
+    *   Orchestrator-Workers Architecture (Gemini 2.5 Flash)
+    *   Parallel Generation UX (Waiting time reduction)
+    *   ReAct Pattern for Parents
+    *   Tech Stack Overview (Next.js 16, Firebase, Vertex AI)
 
 ---
 
