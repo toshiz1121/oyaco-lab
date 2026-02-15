@@ -14,8 +14,8 @@ DEST_DIR = Path("output/video_analysis_5sec_processed")
 
 # Crop settings based on inspection of frame_0001.png
 # Original size: 1640x2360
-# Remove browser UI at top by cropping 360px from top.
-CROP_TOP = 360
+# Remove browser UI at top by cropping 273px from top.
+CROP_TOP = 273
 
 # Output target (4:3) based on cropped height 2100 -> width 2800
 TARGET_HEIGHT = 2100
@@ -28,18 +28,12 @@ BG_COLOR_B = (232, 248, 236)  # #E8F8EC (淡い緑)
 
 
 def background_for_frame(frame_name: str) -> tuple[int, int, int]:
-    # A: frame_0001,0004,0005,0006,0011,0014
-    # B: frame_0016,0020,0024
-    if frame_name in {
-        "frame_0001.png",
-        "frame_0004.png",
-        "frame_0005.png",
-        "frame_0006.png",
-        "frame_0011.png",
-        "frame_0014.png",
-    }:
-        return BG_COLOR_A
-    if frame_name in {"frame_0016.png", "frame_0020.png", "frame_0024.png"}:
+    # frame_0017 以降は保護者パートとして薄緑
+    try:
+        index = int(frame_name.replace("frame_", "").replace(".png", ""))
+    except ValueError:
+        return BG_COLOR_DEFAULT
+    if index >= 17:
         return BG_COLOR_B
     return BG_COLOR_DEFAULT
 
