@@ -42,19 +42,11 @@ async function initializeFirebase() {
       // ランタイム設定を取得
       const firebaseConfig = getFirebaseConfig();
       
-      console.log('[Firebase] Initializing with config:', {
-        apiKey: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 10)}...` : 'undefined',
-        authDomain: firebaseConfig.authDomain || 'undefined',
-        projectId: firebaseConfig.projectId || 'undefined',
-      });
-
       // Firebase初期化
       if (getApps().length === 0) {
         _app = initializeApp(firebaseConfig);
-        console.log('[Firebase] Initialized successfully');
       } else {
         _app = getApps()[0];
-        console.log('[Firebase] Using existing instance');
       }
 
       // Firestoreを初期化（オフライン永続化を無効化してCloud Run環境での問題を回避）
@@ -70,45 +62,36 @@ async function initializeFirebase() {
       try {
         // データベース名が指定されている場合のみ使用、空文字列の場合はデフォルトを使用
         if (firestoreDbName && firestoreDbName.trim() !== '') {
-          console.log('[Firebase] Initializing Firestore with database name:', firestoreDbName);
           _db = initializeFirestore(_app, firestoreSettings, firestoreDbName);
         } else {
-          console.log('[Firebase] Initializing Firestore with default database');
           _db = initializeFirestore(_app, firestoreSettings);
         }
         
         // ネットワークを明示的に有効化
         await enableNetwork(_db);
-        console.log('[Firebase] Firestore network enabled');
       } catch (error) {
         // HMR等で既に初期化済みの場合はgetFirestoreでフォールバック
-        console.warn('[Firebase] Firestore already initialized, using existing instance:', error);
+        console.warn('[Firebase] Firestoreは既に初期化済みのため、既存インスタンスを使用:', error);
         
         if (firestoreDbName && firestoreDbName.trim() !== '') {
-          console.log('[Firebase] Getting existing Firestore instance with database name:', firestoreDbName);
           _db = getFirestore(_app, firestoreDbName);
         } else {
-          console.log('[Firebase] Getting existing default Firestore instance');
           _db = getFirestore(_app);
         }
         
         // 既存インスタンスでもネットワークを有効化
         try {
           await enableNetwork(_db);
-          console.log('[Firebase] Firestore network enabled (existing instance)');
         } catch (networkError) {
-          console.warn('[Firebase] Network already enabled:', networkError);
+          console.warn('[Firebase] ネットワークは既に有効化済み:', networkError);
         }
       }
-      console.log('[Firebase] Firestore initialized');
       
       _storage = getStorage(_app);
-      console.log('[Firebase] Storage initialized');
       
       _auth = getAuth(_app);
-      console.log('[Firebase] Auth initialized');
     } catch (error) {
-      console.error('[Firebase] Initialization failed:', error);
+      console.error('[Firebase] 初期化に失敗:', error);
       // 初期化失敗時にキャッシュをリセット
       _app = null;
       _db = null;
@@ -125,7 +108,7 @@ async function initializeFirebase() {
 // Getter関数でアクセス（遅延初期化）
 export async function getFirebaseApp(): Promise<FirebaseApp> {
   if (typeof window === 'undefined') {
-    throw new Error('Firebase can only be used on the client side');
+    throw new Error('Firebaseはクライアントサイドでのみ使用できます');
   }
   await initializeFirebase();
   return _app!;
@@ -133,7 +116,7 @@ export async function getFirebaseApp(): Promise<FirebaseApp> {
 
 export async function getFirebaseDb(): Promise<Firestore> {
   if (typeof window === 'undefined') {
-    throw new Error('Firebase can only be used on the client side');
+    throw new Error('Firebaseはクライアントサイドでのみ使用できます');
   }
   await initializeFirebase();
   return _db!;
@@ -141,7 +124,7 @@ export async function getFirebaseDb(): Promise<Firestore> {
 
 export async function getFirebaseStorage(): Promise<FirebaseStorage> {
   if (typeof window === 'undefined') {
-    throw new Error('Firebase can only be used on the client side');
+    throw new Error('Firebaseはクライアントサイドでのみ使用できます');
   }
   await initializeFirebase();
   return _storage!;
@@ -149,7 +132,7 @@ export async function getFirebaseStorage(): Promise<FirebaseStorage> {
 
 export async function getFirebaseAuth(): Promise<Auth> {
   if (typeof window === 'undefined') {
-    throw new Error('Firebase can only be used on the client side');
+    throw new Error('Firebaseはクライアントサイドでのみ使用できます');
   }
   await initializeFirebase();
   return _auth!;

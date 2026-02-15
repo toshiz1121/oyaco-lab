@@ -136,7 +136,7 @@ async function withRetry<T>(
             const delay = exponentialDelay + jitter;
 
             console.warn(
-                `[Vertex AI] Retry attempt ${attempt}/${maxAttempts} after ${Math.round(delay)}ms`,
+                `[Vertex AI] リトライ ${attempt}/${maxAttempts} 回目（${Math.round(delay)}ms後）`,
                 { error: lastError.message }
             );
 
@@ -208,8 +208,6 @@ export async function callVertexAI(
 ): Promise<any> {
     return withRetry(async () => {
         try {
-            console.log(`[Vertex AI] Calling model: ${modelName}`);
-
             const modelOptions: { model: string; systemInstruction?: string } = { model: modelName };
             if (options?.systemInstruction) {
                 modelOptions.systemInstruction = options.systemInstruction;
@@ -224,17 +222,12 @@ export async function callVertexAI(
                 usageMetadata: response.usageMetadata
             };
 
-            console.log(
-                `[Vertex AI] Response from ${modelName}:`,
-                JSON.stringify(sanitizeForLog(data), null, 2)
-            );
-
             return data;
         } catch (error: any) {
-            console.error(`[Vertex AI] Error calling ${modelName}:`, error);
+            console.error(`[Vertex AI] モデル ${modelName} の呼び出しに失敗:`, error);
 
             throw new VertexAIError(
-                `Vertex AI API call failed: ${error.message}`,
+                `Vertex AI API呼び出しに失敗: ${error.message}`,
                 error.code,
                 error.status,
                 error
@@ -280,8 +273,6 @@ export async function generateSpeech(
 ): Promise<string> {
     return withRetry(async () => {
         try {
-            console.log(`[Vertex AI TTS] Generating speech with voice: ${voiceName}`);
-
             // Google Cloud認証トークンを取得
             // 実装背景: REST APIを使用するため、アクセストークンが必要
             const { GoogleAuth } = require('google-auth-library');
@@ -292,7 +283,7 @@ export async function generateSpeech(
             const accessToken = await authClient.getAccessToken();
 
             if (!accessToken.token) {
-                throw new VertexAIError('Failed to obtain access token', 'AUTH_ERROR');
+                throw new VertexAIError('アクセストークンの取得に失敗しました', 'AUTH_ERROR');
             }
 
             // Vertex AI TTS APIエンドポイント
@@ -317,9 +308,6 @@ export async function generateSpeech(
                 }
             };
 
-            console.log(`[Vertex AI TTS] Request URL: ${url}`);
-            console.log(`[Vertex AI TTS] Request Body:`, JSON.stringify(requestBody, null, 2));
-
             // API呼び出し
             const response = await fetch(url, {
                 method: 'POST',
@@ -332,11 +320,11 @@ export async function generateSpeech(
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                console.error("[Vertex AI TTS] Error Response:", JSON.stringify(errorData, null, 2));
-                console.error(`[Vertex AI TTS] Status: ${response.status} ${response.statusText}`);
+                console.error("[Vertex AI TTS] エラーレスポンス:", JSON.stringify(errorData, null, 2));
+                console.error(`[Vertex AI TTS] ステータス: ${response.status} ${response.statusText}`);
 
                 throw new VertexAIError(
-                    `TTS API call failed: ${response.statusText}`,
+                    `TTS API呼び出しに失敗: ${response.statusText}`,
                     'TTS_API_ERROR',
                     response.status,
                     errorData
@@ -350,7 +338,7 @@ export async function generateSpeech(
 
             if (!part || !part.inlineData || !part.inlineData.data) {
                 throw new VertexAIError(
-                    'No audio data returned from Vertex AI TTS',
+                    'Vertex AI TTSから音声データが返されませんでした',
                     'NO_AUDIO_DATA'
                 );
             }
@@ -360,19 +348,17 @@ export async function generateSpeech(
             const pcmData = new Uint8Array(Buffer.from(part.inlineData.data, 'base64'));
             const wavData = addWavHeader(pcmData, 24000); // 24kHz サンプリングレート
 
-            console.log(`[Vertex AI TTS] Successfully generated speech: ${wavData.length} bytes`);
-
             return Buffer.from(wavData).toString('base64');
 
         } catch (error: any) {
-            console.error("[Vertex AI TTS] Error:", error);
+            console.error("[Vertex AI TTS] 音声生成エラー:", error);
 
             if (error instanceof VertexAIError) {
                 throw error;
             }
 
             throw new VertexAIError(
-                `Speech generation failed: ${error.message}`,
+                `音声生成に失敗: ${error.message}`,
                 'TTS_ERROR',
                 undefined,
                 error

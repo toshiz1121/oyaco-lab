@@ -61,7 +61,6 @@ export async function createChildProfile(
   };
 
   await setDoc(doc(db, 'children', childId), profile);
-  console.log(`[Firestore] Created child profile: ${childId}, age: ${age}, birthYear: ${birthYear}`);
   return profile;
 }
 
@@ -93,7 +92,6 @@ export async function updateChildProfile(
     ...updates,
     updatedAt: Timestamp.now(),
   });
-  console.log('[Firestore] 子供のプロフィールのアップデート完了');
 }
 
 // ========================================
@@ -165,7 +163,6 @@ export async function addScene(
   };
 
   await setDoc(sceneRef, sceneData);
-  console.log(`[Firestore] Added scene: ${scene.sceneId}`);
 }
 
 /**
@@ -303,6 +300,5 @@ export async function updateConversationFeedback(
     conversationId
   );
   await updateDoc(conversationRef, feedback);
-  console.log(`[Firestore] Updated feedback for conversation: ${conversationId}`);
 }
 

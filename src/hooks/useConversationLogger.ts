@@ -99,7 +99,7 @@ export function useConversationLogger(childId: string) {
       return conversationId;
 
     } catch (err) {
-      const e = err instanceof Error ? err : new Error('Unknown error');
+      const e = err instanceof Error ? err : new Error('不明なエラー');
       setError(e);
       console.error('[useConversationLogger] ログ保存失敗:', e);
       return null;

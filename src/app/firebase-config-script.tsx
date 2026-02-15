@@ -46,7 +46,7 @@ export function FirebaseConfigScript() {
   const hasAllKeys = Object.values(requiredConfig).every(v => v !== undefined && v !== '');
   
   if (!hasAllKeys) {
-    console.error('[FirebaseConfigScript] Missing Firebase configuration');
+    console.error('[FirebaseConfigScript] Firebase設定が不足しています');
   }
 
   // セキュリティチェック: NEXT_PUBLIC_以外の環境変数が含まれていないことを確認
@@ -65,7 +65,7 @@ export function FirebaseConfigScript() {
   );
   
   if (foundDangerousKeys.length > 0) {
-    console.warn('[FirebaseConfigScript] Dangerous keys detected in environment:', foundDangerousKeys);
+    console.warn('[FirebaseConfigScript] 危険なキーが環境変数に検出されました:', foundDangerousKeys);
   }
 
   return (

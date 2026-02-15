@@ -76,7 +76,7 @@ export function getAllSessions(): ChatSession[] {
     const sessions = JSON.parse(data) as ChatSession[];
     return sessions.sort((a, b) => b.lastUpdated - a.lastUpdated);
   } catch (error) {
-    console.error('Failed to load chat history:', error);
+    console.error('チャット履歴の読み込みに失敗:', error);
     return [];
   }
 }
@@ -97,13 +97,13 @@ function saveSessions(sessions: ChatSession[]): void {
   } catch (error) {
     // QuotaExceededError handling
     if (error instanceof Error && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-        console.warn('Storage quota exceeded. Attempting to recover...');
+        console.warn('ストレージ容量超過。復旧を試みます...');
         
         try {
             // 戦略1: セッション数を減らして再試行 (最新5件のみ)
             const reducedSessions = sessions.slice(0, 5);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(reducedSessions));
-            console.log('History saved with reduced session count.');
+            console.log('セッション数を削減して履歴を保存しました。');
             return;
         } catch (retryError) {
             // 戦略2: 画像・音声データを削除して保存 (テキストのみ保存)
@@ -129,7 +129,7 @@ function saveSessions(sessions: ChatSession[]): void {
                     })
                 }));
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(compressedSessions));
-                console.log('History saved without images/audio due to size limits.');
+                console.log('容量制限のため、画像・音声なしで履歴を保存しました。');
                 return;
             } catch (secondRetryError) {
                 // 戦略3: 最新3件のみ、テキストだけ保存
@@ -145,11 +145,11 @@ function saveSessions(sessions: ChatSession[]): void {
                         }))
                     }));
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(minimalSessions));
-                    console.log('History saved with minimal data (text only).');
+                    console.log('最小限のデータ（テキストのみ）で履歴を保存しました。');
                     return;
                 } catch (finalError) {
                     // 戦略4: 履歴をクリアして新規保存
-                    console.error('Critical: All recovery attempts failed. Clearing old history.');
+                    console.error('致命的: 全ての復旧試行が失敗しました。古い履歴をクリアします。');
                     localStorage.removeItem(STORAGE_KEY);
                     
                     // 最新のセッションのみ保存を試みる
@@ -167,14 +167,14 @@ function saveSessions(sessions: ChatSession[]): void {
                         try {
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(latestOnly));
                         } catch (e) {
-                            console.error('Failed to save even minimal history:', e);
+                            console.error('最小限の履歴の保存にも失敗:', e);
                         }
                     }
                 }
             }
         }
     } else {
-        console.error('Failed to save chat history:', error);
+        console.error('チャット履歴の保存に失敗:', error);
     }
   }
 }

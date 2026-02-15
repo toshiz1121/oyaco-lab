@@ -323,8 +323,6 @@ ${stepsText}
 `;
 
   try {
-    console.log(`[Educator] ${expert.nameJa}の回答をレビュー中...`);
-
     const data = await callVertexAI(AGENT_MODELS.expert, {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { temperature: 0.3, responseMimeType: "application/json" }
@@ -337,7 +335,6 @@ ${stepsText}
     const parsed = JSON.parse(jsonString);
 
     const approved = parsed.approved !== false; // デフォルトは approved
-    console.log(`[Educator] レビュー結果: approved=${approved}, feedback="${parsed.feedback}"`);
 
     return {
       approved,
@@ -422,8 +419,6 @@ ${stepsText}
 `;
 
   try {
-    console.log(`[FollowUp] ${agent.nameJa}の回答から深掘り質問を生成中...`);
-
     const data = await callVertexAI(AGENT_MODELS.expert, {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { temperature: 0.7, responseMimeType: "application/json" }
@@ -444,7 +439,6 @@ ${stepsText}
         emoji: q.emoji || '❓',
       }));
 
-    console.log(`[FollowUp] ${questions.length}個の深掘り質問を生成しました`);
     return questions;
 
   } catch (error) {

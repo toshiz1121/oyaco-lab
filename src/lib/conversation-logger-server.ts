@@ -45,7 +45,6 @@ export async function logConversationServer(params: LogConversationParams): Prom
   const startTime = Date.now();
 
   try {
-    console.log(`[ConversationLoggerServer] Starting to log conversation: ${conversationId}`);
 
     // 1. 会話メタデータを作成
     await createConversationServer(
@@ -56,7 +55,6 @@ export async function logConversationServer(params: LogConversationParams): Prom
       selectedExpert,
       selectionReason
     );
-    console.log('[ConversationLoggerServer] Conversation metadata created');
 
     // 2. シーンを一括保存
     if (response.pairs && response.pairs.length > 0) {
@@ -68,7 +66,7 @@ export async function logConversationServer(params: LogConversationParams): Prom
 
           let imageUrl = pair.imageUrl || '';
           if (imageUrl.startsWith('data:image/')) {
-            console.error(`[ConversationLoggerServer] Scene ${index + 1}: Base64データが渡されました`);
+      console.error(`[ConversationLoggerServer] シーン ${index + 1}: Base64データが渡されました`);
             imageUrl = '';
           }
 
@@ -94,7 +92,6 @@ export async function logConversationServer(params: LogConversationParams): Prom
       );
 
       await addScenesBatchServer(childId, conversationId, scenes);
-      console.log(`[ConversationLoggerServer] Saved ${scenes.length} scenes`);
     }
 
     // 3. 会話を完了状態に更新
@@ -108,12 +105,11 @@ export async function logConversationServer(params: LogConversationParams): Prom
       curiosityType,
       selectedExpert
     );
-    console.log('[ConversationLoggerServer] Conversation completed');
 
     return conversationId;
 
   } catch (error) {
-    console.error('[ConversationLoggerServer] Failed to log conversation:', error);
+    console.error('[ConversationLoggerServer] 会話ログの保存に失敗:', error);
     throw error;
   }
 }
@@ -153,8 +149,6 @@ ${typeDescriptions}
 }`;
 
   try {
-    console.log('[estimateCuriosityTypeServer] Analyzing curiosity type...');
-    
     const data = await callVertexAI(VERTEX_AI_CONFIG.models.text, {
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
@@ -165,7 +159,7 @@ ${typeDescriptions}
 
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     if (!content) {
-      console.warn('[estimateCuriosityTypeServer] No response from AI');
+      console.warn('[estimateCuriosityTypeServer] AIからの応答がありません');
       return '01';
     }
 
@@ -176,15 +170,14 @@ ${typeDescriptions}
     const reasoning = parsed.reasoning || '分析完了';
 
     if (typeId && allCuriosityTypes.some(t => t.id === typeId)) {
-      console.log(`[estimateCuriosityTypeServer] Result: ${typeId} (${reasoning})`);
       return typeId;
     }
 
-    console.warn(`[estimateCuriosityTypeServer] Unknown type ID: ${typeId}`);
+    console.warn(`[estimateCuriosityTypeServer] 不明なタイプID: ${typeId}`);
     return '01';
 
   } catch (error) {
-    console.error('[estimateCuriosityTypeServer] AI analysis failed:', error);
+    console.error('[estimateCuriosityTypeServer] AI分析に失敗:', error);
     return estimateCuriosityTypeByKeywords(question);
   }
 }

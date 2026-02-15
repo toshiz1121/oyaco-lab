@@ -12,12 +12,9 @@ import type { ParentUser } from './types';
 // 親ユーザーを取得する
 export async function getParentUser(userId: string): Promise<ParentUser | null> {
     try {
-        console.log('[Auth] Fetching parent user:', userId);
         const db = await getFirebaseDb();
-        console.log('[Auth] Firestore instance obtained');
         
         const docRef = doc(db, 'parents', userId);
-        console.log('[Auth] Document reference created');
         
         // オフラインエラーを回避するため、タイムアウトとリトライを実装
         const maxRetries = 3;
@@ -25,26 +22,21 @@ export async function getParentUser(userId: string): Promise<ParentUser | null> 
         
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                console.log(`[Auth] Attempt ${attempt}/${maxRetries} to fetch document`);
                 const docSnap = await getDoc(docRef);
-                console.log('[Auth] Document fetch complete, exists:', docSnap.exists());
 
                 if(docSnap.exists()) {
                     const data = docSnap.data() as ParentUser;
-                    console.log('[Auth] Parent user data:', { userId: data.userId, children: data.children });
                     return data;
                 }
 
-                console.log('[Auth] Parent user not found');
                 return null;
             } catch (fetchError: unknown) {
                 lastError = fetchError as Error;
                 const errorMessage = lastError?.message || String(fetchError);
-                console.warn(`[Auth] Attempt ${attempt} failed:`, errorMessage);
+                console.warn(`[Auth] 試行 ${attempt} 回目失敗:`, errorMessage);
                 
                 // オフラインエラーの場合は短い待機後にリトライ
                 if (errorMessage.includes('offline') && attempt < maxRetries) {
-                    console.log(`[Auth] Retrying in ${attempt * 500}ms...`);
                     await new Promise(resolve => setTimeout(resolve, attempt * 500));
                     continue;
                 }
@@ -57,10 +49,10 @@ export async function getParentUser(userId: string): Promise<ParentUser | null> 
         }
         
         // 全てのリトライが失敗した場合
-        console.error('[Auth] All retry attempts failed');
-        throw lastError || new Error('Failed to fetch parent user after retries');
+        console.error('[Auth] 全てのリトライが失敗しました');
+        throw lastError || new Error('リトライ後も親ユーザーの取得に失敗しました');
     } catch (error) {
-        console.error('[Auth] Error fetching parent user:', error);
+        console.error('[Auth] 親ユーザーの取得に失敗:', error);
         throw error;
     }
 }
@@ -68,7 +60,6 @@ export async function getParentUser(userId: string): Promise<ParentUser | null> 
 // 親ユーザーを作成
 export async function createParentUser(data: {userId: string; email: string; displayName: string; photoURL?: string;}): Promise<ParentUser> {
     try {
-        console.log('[Auth] Creating parent user:', data.userId);
         const db = await getFirebaseDb();
         
         // 親ユーザーのデータを整理
@@ -86,11 +77,10 @@ export async function createParentUser(data: {userId: string; email: string; dis
         };
 
         await setDoc(doc(db, 'parents', data.userId), parentUser);
-        console.log('[Auth] 親ユーザーの作成成功');
         
         return parentUser;
     } catch (error) {
-        console.error('[Auth] Error creating parent user:', error);
+        console.error('[Auth] 親ユーザーの作成に失敗:', error);
         throw error;
     }
 }
@@ -111,8 +101,6 @@ export async function updateActiveChild(userId: string, childId: string) {
     await updateDoc(docRef, {
         activeChildId: childId,
     });
-    
-    console.log('[Auth]アクティブな子供の更新の成功');
 }
 
 /**
@@ -144,6 +132,4 @@ export async function addChildToParent(
     activeChildId: childId, // 新しい子供を自動選択
     lastLoginAt: Timestamp.now(),
   });
-
-  console.log(`[Auth] 親 ${parentUserId} に子供 ${childId} を追加しました`);
 }

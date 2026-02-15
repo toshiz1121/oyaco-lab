@@ -161,8 +161,6 @@ export async function runParentAgent(
   ];
 
   for (let step = 0; step < MAX_STEPS; step++) {
-    console.log(`[ParentAgent] Step ${step + 1}/${MAX_STEPS}`);
-
     // LLM を呼び出す
     const response = await callVertexAI(AGENT_MODEL, {
       contents: messages,
@@ -189,7 +187,6 @@ export async function runParentAgent(
         args: Record<string, unknown>;
       };
 
-      console.log(`[ParentAgent] Tool call: ${name}`, args);
       steps.push({ type: 'thinking', content: `ツール「${name}」を呼び出します` });
 
       const toolResult = await executeToolCall(name, args, request.childId);
@@ -262,7 +259,6 @@ async function executeToolCall(
 ): Promise<unknown> {
   // LLMが名前を渡すことがあるため、常に実際のchildIdを使用
   const childId = fallbackChildId;
-  console.log(`[ParentAgent] executeToolCall: ${toolName}, childId: ${childId} (args.childId was: ${args.childId})`);
 
 
   switch (toolName) {
@@ -312,7 +308,7 @@ async function generateFinalAnswer(
     const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
     return text || `${request.childName}さんの学習状況を分析しました。詳しくはもう一度お尋ねください。`;
   } catch (error) {
-    console.error('[ParentAgent] Failed to generate final answer:', error);
+    console.error('[ParentAgent] 最終回答の生成に失敗:', error);
     return '申し訳ありません。分析中にエラーが発生しました。もう一度お試しください。';
   }
 }

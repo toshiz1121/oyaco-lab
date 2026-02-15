@@ -43,7 +43,6 @@ export default function AddChildPage() {
       
       // 成功判定: childIdが返ってきたら成功
       if (childId) {
-        console.log(`[AddChild] 子供の追加に成功: ${childId}`);
         // 成功したら子供選択画面に戻る
         router.push('/select-child');
       } else {

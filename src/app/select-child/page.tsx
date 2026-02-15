@@ -16,7 +16,6 @@ export default function SelectChildPage() {
 
     useEffect(() => {
         if(!loading && !user) {
-            console.log('[SelectChild] ユーザー未認証、ログイン画面へ');
             router.push('/login');
         }
     }, [user, loading, router]);

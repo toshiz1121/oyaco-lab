@@ -52,11 +52,11 @@ export async function uploadConversationImage(
       });
       return await getDownloadURL(storageRef);
     } catch (error) {
-      console.error(`[Storage] Upload failed (attempt ${attempt + 1}/${maxRetries + 1}):`, error);
+      console.error(`[Storage] アップロード失敗（試行 ${attempt + 1}/${maxRetries + 1} 回目）:`, error);
       if (attempt === maxRetries) throw error;
       await new Promise(r => setTimeout(r, Math.pow(2, attempt + 1) * 1000));
     }
   }
 
-  throw new Error('Upload failed after all retries');
+  throw new Error('全てのリトライ後もアップロードに失敗しました');
 }

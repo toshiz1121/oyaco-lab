@@ -22,7 +22,7 @@ function getAdminApp(): App {
   const projectId = process.env.FIREBASE_PROJECT_ID || 'zenn202602';
 
   if (!process.env.FIREBASE_PROJECT_ID) {
-    console.warn('[Firebase Admin] FIREBASE_PROJECT_ID is not set, using default: zenn202602');
+    console.warn('[Firebase Admin] FIREBASE_PROJECT_ID が未設定のため、デフォルト値を使用: zenn202602');
   }
 
   try {
@@ -32,11 +32,9 @@ function getAdminApp(): App {
       projectId,
     });
     
-    console.log(`[Firebase Admin] Initialized with projectId: ${projectId} (ADC)`);
-    
   } catch (error) {
-    console.error('[Firebase Admin] Initialization failed:', error);
-    throw new Error('Firebase Admin SDK initialization failed.');
+    console.error('[Firebase Admin] 初期化に失敗:', error);
+    throw new Error('Firebase Admin SDK の初期化に失敗しました。');
   }
 
   return _adminApp;
@@ -49,7 +47,7 @@ export function getAdminDb(): Firestore {
   if (_adminDb) return _adminDb;
   const dbName = process.env.FIRESTORE_DB_NAME || 'oyaco-lab';
   if (!process.env.FIRESTORE_DB_NAME) {
-    console.warn('[Firebase Admin] FIRESTORE_DB_NAME is not set, using default: oyaco-lab');
+    console.warn('[Firebase Admin] FIRESTORE_DB_NAME が未設定のため、デフォルト値を使用: oyaco-lab');
   }
   _adminDb = getFirestore(getAdminApp(), dbName);
   return _adminDb;

@@ -55,9 +55,6 @@ export async function getConversationsByDateRangeServer(
 ): Promise<ConversationMetadata[]> {
   const db = getAdminDb();
   
-  console.log(`[Firestore Server] Querying conversations for childId: ${childId}`);
-  console.log(`[Firestore Server] Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
-  
   const snapshot = await db
     .collection('children')
     .doc(childId)
@@ -74,8 +71,6 @@ export async function getConversationsByDateRangeServer(
     const bTime = b.createdAt?.toDate?.()?.getTime() || 0;
     return bTime - aTime; // 降順
   });
-  
-  console.log(`[Firestore Server] Found ${conversations.length} conversations`);
   
   return conversations;
 }
@@ -112,8 +107,6 @@ export async function createConversationServer(
     .collection('conversations')
     .doc(conversationId)
     .set(metadata);
-
-  console.log(`[Firestore Server] Created conversation: ${conversationId}`);
 }
 
 /**
@@ -143,7 +136,6 @@ export async function addScenesBatchServer(
   });
 
   await batch.commit();
-  console.log(`[Firestore Server] Saved ${scenes.length} scenes in batch`);
 }
 
 /**
@@ -190,7 +182,7 @@ export async function completeConversationServer(
     const childSnap = await childRef.get();
 
     if (!childSnap.exists) {
-      console.warn('[Firestore Server] Child profile not found, skipping stats update');
+      console.warn('[Firestore Server] 子供プロフィールが見つかりません。統計更新をスキップします');
       return;
     }
 
@@ -242,11 +234,10 @@ export async function completeConversationServer(
     }
 
     await childRef.update(statsUpdate);
-    console.log(`[Firestore Server] Child stats updated for ${childId}`);
 
   } catch (statsError) {
     // stats更新の失敗は会話完了自体をブロックしない
-    console.error('[Firestore Server] Failed to update child stats:', statsError);
+    console.error('[Firestore Server] 子供の統計情報の更新に失敗:', statsError);
   }
 }
 
@@ -350,7 +341,7 @@ async function calculateLearningProfile(
     return { curiosityLevel, preferredStyle, attentionSpan };
 
   } catch (error) {
-    console.error('[Firestore Server] Failed to calculate learningProfile:', error);
+    console.error('[Firestore Server] learningProfileの計算に失敗:', error);
     return null;
   }
 }

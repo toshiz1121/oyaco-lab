@@ -12,8 +12,6 @@ export function getFirebaseConfig() {
     if (window.__FIREBASE_CONFIG__) {
       // @ts-ignore
       const config = window.__FIREBASE_CONFIG__;
-      console.log('[Firebase Config] Using config from window.__FIREBASE_CONFIG__');
-      console.log('[Firebase Config] Firestore DB Name:', config.firestoreDbName || 'kidds-kikkake-lab');
       return config;
     }
   }
@@ -28,9 +26,6 @@ export function getFirebaseConfig() {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     firestoreDbName: process.env.NEXT_PUBLIC_FIRESTORE_DB_NAME,
   };
-
-  console.log('[Firebase Config] Using config from environment variables');
-  console.log('[Firebase Config] Firestore DB Name:', config.firestoreDbName || 'Hard oyaco-lab');
 
   // 設定値の検証（firestoreDbNameは任意なので除外）
   const requiredConfig = {
@@ -47,8 +42,8 @@ export function getFirebaseConfig() {
     .map(([key]) => key);
 
   if (missingKeys.length > 0) {
-    console.error('[Firebase Config] Missing configuration keys:', missingKeys);
-    throw new Error(`Firebase configuration is incomplete. Missing: ${missingKeys.join(', ')}`);
+    console.error('[Firebase Config] 必須の設定キーが不足しています:', missingKeys);
+    throw new Error(`Firebase設定が不完全です。不足: ${missingKeys.join(', ')}`);
   }
 
   return config;

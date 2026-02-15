@@ -30,7 +30,6 @@ export function StreamingText({ text, speed = 50, totalDuration, isActive = true
     if (totalDuration && text.length > 0) {
       const calculatedSpeed = totalDuration / text.length;
       actualSpeed = Math.max(20, Math.min(200, calculatedSpeed));
-      console.log(`StreamingText: duration=${totalDuration}ms, length=${text.length}, speed=${actualSpeed}ms/char`);
     }
 
     timerRef.current = setInterval(() => {

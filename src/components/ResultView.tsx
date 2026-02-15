@@ -99,7 +99,7 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
       setIsWaitingForAudio(false);
 
       if (!cachedAudio) {
-        console.warn(`[WARN] TTS timeout for ${pair.id}`);
+        console.warn(`[WARN] ${pair.id} のTTSがタイムアウトしました`);
         return;
       }
     }
@@ -126,7 +126,7 @@ export function ResultView({ response, agent, question, onFollowUpQuestion }: Re
     try {
       await cachedAudio.play();
     } catch (err) {
-      console.error('Audio play failed:', err);
+      console.error('音声再生に失敗:', err);
       setIsSpeaking(false);
       currentAudioRef.current = null;
     }
