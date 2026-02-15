@@ -1,6 +1,7 @@
 "use client";
 
 import { AgentChatInterface } from "@/components/AgentChatInterface";
+import { ChildSelectBox } from "@/components/ChildSelectBox";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
@@ -50,12 +51,15 @@ export default function Home() {
               <p className="text-xs sm:text-sm text-sky-700 truncate">なんで？をはかせにきいてみよう！</p>
             </div>
           </div>
-          <Link href="/parent">
-            <Button variant="outline" size="default" className="gap-1.5 text-sm shrink-0 ml-3">
-              <LineChart className="h-4 w-4" />
-              <span className="hidden sm:inline">保護者</span>
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2 shrink-0 ml-3">
+            <ChildSelectBox />
+            <Link href="/parent">
+              <Button variant="outline" size="default" className="gap-1.5 text-sm">
+                <LineChart className="h-4 w-4" />
+                <span className="hidden sm:inline">保護者</span>
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 

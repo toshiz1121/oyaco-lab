@@ -11,13 +11,15 @@ import {
 } from 'firebase/auth';
 import { getFirebaseAuth } from "@/lib/firebase/config";
 import { getParentUser, createParentUser, updateActiveChild, addChildToParent } from "@/lib/firebase/auth";
-import { createChildProfile } from "@/lib/firebase/firestore";
+import { createChildProfile, getChildProfile } from "@/lib/firebase/firestore";
+import type { ChildProfile } from "@/lib/firebase/types";
 
 interface AuthContextType {
     user: User | null;
     parentUserId: string | null;
     activeChildId: string | null;
     childrenIds: string[];
+    childProfiles: ChildProfile[];
     loading: boolean;
 
     signInWithGoogle: () => Promise<void>;
@@ -33,7 +35,23 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
     const [parentUserId, setParentUserId] = useState<string | null>(null);
     const [activeChildId, setActiveChildId] = useState<string | null>(null);
     const [childrenIds, setChildrenIds] = useState<string[]>([]); 
+    const [childProfiles, setChildProfiles] = useState<ChildProfile[]>([]);
     const [loading, setLoading] = useState(true);   
+
+    // childrenIds が変わったら子供プロフィールをフェッチ
+    useEffect(() => {
+        if (childrenIds.length === 0) {
+            setChildProfiles([]);
+            return;
+        }
+        const fetchProfiles = async () => {
+            const profiles = await Promise.all(
+                childrenIds.map(id => getChildProfile(id))
+            );
+            setChildProfiles(profiles.filter((p): p is ChildProfile => p !== null));
+        };
+        fetchProfiles();
+    }, [childrenIds]);
 
     // 認証状態の監視
     useEffect(() => {
@@ -221,6 +239,7 @@ export function AuthProvider({ children }: {children: React.ReactNode }) {
                 parentUserId,
                 activeChildId,
                 childrenIds,
+                childProfiles,
                 loading,
                 signInWithGoogle,
                 signOut,
