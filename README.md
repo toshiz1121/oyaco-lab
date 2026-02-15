@@ -1,252 +1,220 @@
-# Kids Science Lab (キッズ・サイエンス・ラボ)
+# OyaCo Lab
 
-子供たちの「なぜ？」「どうして？」という素朴な疑問に対し、個性豊かな7人のAI博士が対話形式で答え、画像や音声を交えてわかりやすく解説する科学教育Webアプリケーションです。
+> 好奇心に、最高の相棒を。家族に、会話の架け橋を。
 
-## 📖 プロジェクト概要
+## はじめに
 
-忙しい共働き夫婦と、好奇心旺盛な子供たちのコミュニケーションを支援することを目的としています。
-Orchestrator-Workers パターンを採用したAIエージェント群が、子供の質問内容に応じて最適な専門家を選定し、年齢や好みに合わせたスタイルで回答します。
+突然ですが、小さなお子さんを持つ親御さん、こんな経験はありませんか？
 
-### コア機能
+「パパ、なんで空は青いの？」「ママ、なんで月はついてくるの？」
 
-- **🤖 7人の個性的な専門家エージェント**: 質問内容に合わせて、最適な「博士」が自動選定されます。
-  - 🔬 ニュートン博士（科学・物理・化学）
-  - 🌿 もりの隊長ハヤテ（動物・植物・自然）
-  - 🌙 ほしぞら先生ルナ（宇宙・天文）
-  - 📜 ものしり爺さんゲン（歴史・文化・社会）
-  - 🎨 いろどり先生パレット（芸術・感情・表現）
-  - 🤖 テックン博士（IT・テクノロジー・ロボット）
-  - 😊 スマイル先生（からだ・健康・生活 + 他の博士の回答レビュー）
-- **🎨 マルチメディア解説**: AI生成されたイラストや図解で視覚的に説明します。文章と画像をペアで並列生成し、ステップごとに表示します。
-- **🗣️ 音声対話**: Vertex AI TTS による読み上げ（Web Speech API フォールバック付き）で、文字が読めない小さなお子様でも楽しめます。音声入力にも対応しています。
-- **✅ Educator レビュー**: スマイル先生が他の博士の回答を「子供にとって分かりやすいか」自動チェックし、必要に応じて修正します。
-- **❓ 深掘り質問**: 回答内容から「もっと知りたい！」と思える次の質問候補を自動生成します。他の博士の専門領域にまたがる質問も提案されます。
-- **👨‍👩‍👧 保護者ダッシュボード**: 子供の会話履歴、興味の統計、AI による会話提案を確認できます。PC では2カラムレイアウト、スマホではFABボタンから子育てアドバイザーにアクセスできるレスポンシブ対応です。
-- **🧠 子育てアドバイザーエージェント**: ReAct パターン（Reasoning + Acting）で Gemini の Function Calling を活用し、会話履歴分析・学習進捗分析・知識ギャップ分析を自律的に実行して、保護者に具体的なアドバイスを提供します。
-- **🔐 認証・マルチ子供管理**: Googleログインによる保護者認証と、複数の子供プロフィールの切り替えに対応しています。
+子供の好奇心は無限大です。ある研究によると、**4歳の子供は1日に平均して200〜300回もの質問をする**と言われています。特に好奇心が旺盛な時期には、約2分に1回という驚異的な頻度で「なぜ？」が繰り返されます。
 
-## 🛠️ 技術スタック
+一方で、私たち親には時間がありません。共働き世帯の増加に伴い、平日に親子が一緒に過ごせる時間は**約2時間**。そのうち、純粋に会話をしている時間は**わずか25分**程度というデータもあります。
 
-### Frontend
-- **Framework**: [Next.js 16.1](https://nextjs.org/) (App Router)
-- **Library**: [React 19.2](https://react.dev/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS 4.x](https://tailwindcss.com/)
-- **UI Components**: [shadcn/ui](https://ui.shadcn.com/) (Radix UI)
-- **Animation**: [Framer Motion](https://www.framer.com/motion/)
+**「1日300回の質問」 vs 「1日25分の会話」。**
 
-### AI / Backend Services
-- **Orchestration & Text Gen**: Google Cloud Vertex AI (`gemini-2.5-flash`)
-- **Image Generation**: Google Cloud Vertex AI (`gemini-2.5-flash-image`)
-- **Speech Synthesis**: Google Cloud Vertex AI TTS (`gemini-2.5-flash-tts`) / Web Speech API Fallback
-- **Parent Agent**: Gemini Function Calling（ReAct パターンによる自律的ツール実行）
+単純計算しても、1つの質問に対して親が割ける時間は**わずか5秒**しかありません。これでは、子供の「なぜ？」に正面から向き合うことは物理的に不可能です。
 
-### Authentication & Database
-- **Authentication**: [Firebase Authentication](https://firebase.google.com/docs/auth)（Google ログイン）
-- **Database**: [Cloud Firestore](https://firebase.google.com/docs/firestore)（会話ログ・ユーザー管理）
-- **Storage**: [Firebase Storage](https://firebase.google.com/docs/storage)（会話画像の永続化）
-- **Server-side Access**: [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup)（Server Actions からの Firestore アクセス）
+その結果、多くの親が「あとでね」と遮ってしまったり、スマホを見せたりしてやり過ごし、後になって「もっと話を聞いてあげればよかった」と**罪悪感（ギルティ）** を抱えています。
 
-## 🚀 セットアップ
+私たちは、この **「圧倒的な需要（子供の好奇心）と供給（親の時間）のミスマッチ」** こそが、現代の子育てにおける最大のペインポイントであると考えました。
+
+そして開発したのが、**OyaCo Lab** です。
+
+これは単なる子供向けの学習アプリではありません。**AIが子供の「好奇心の相棒」として300回の質問を受け止め、そこで得た発見を親に「会話のネタ」として届けることで、限られた25分の会話を「濃密な時間」に変える**ためのプロダクトです。
+
+## 解決したかった課題
+
+### 1. 構造的な「会話時間の欠乏」
+
+子供の質問欲求に対して親のリソースは圧倒的に不足しています。東北大学の研究によれば、親子で「多様な会話」を持つ頻度は、子供の言語理解能力や脳（右上側頭回）の発達に直接的な影響を与えるとされています。しかし、日々の業務や家事に追われる中で、その時間を確保するのは至難の業です。
+
+### 2. 「何を話せばいいかわからない」問題
+
+いざ時間があっても、「今日学校どうだった？」「楽しかった」で会話が終了してしまう...。子供が今、具体的に何に興味を持っているのか（例えば「恐竜」といっても、ティラノサウルスの強さなのか、化石の発掘なのか）を把握できていないため、話を広げられないのです。
+
+### 3. 親の心理的負担（罪悪感）
+
+調査によると、6割以上の親が「子供への関わり方に自信がない」「申し訳ない」と感じています。「忙しいから」という理由で子供の好奇心をスルーしてしまった時の申し訳なさは、親の自己肯定感をも下げてしまいます。
+
+## ソリューション: 発見とつながりのサイクル
+
+OyaCo Lab は、子供とAIだけで完結するのではなく、そこから親子の会話が生まれる**「発見とつながりのサイクル」**をデザインしました。
+
+```
+1. Exploration（探求）→ 2. Bridge（架け橋）→ 3. Connection（対話）→ 1に戻る
+```
+
+### ① Exploration（探求）: 子供がAI博士と一緒に疑問を解決する
+
+アプリを開くと、7人の個性豊かなAI博士たちが待っています。
+
+| 博士 | 専門分野 | 口調の特徴 |
+|---|---|---|
+| 🔬 ニュートン博士 | 物理・化学・科学全般 | 「〜なんじゃよ」「ほっほっほ」 |
+| 🌿 もりの隊長ハヤテ | 動物・植物・自然 | 「〜だよ！」「すごいんだ！」 |
+| 🌙 ほしぞら先生ルナ | 宇宙・天文・地球 | 「〜かしら」「〜のよ」 |
+| 📜 ものしり爺さんゲン | 歴史・文化・社会 | 「昔はのう…」「〜だったんじゃ」 |
+| 🎨 いろどり先生パレット | 芸術・感情・表現 | 「わぁ、素敵！」「きれいだよね！」 |
+| 🤖 テックン博士 | IT・テクノロジー | 「ピピッ！」「じつはね…」 |
+| 😊 スマイル先生 | からだ・健康・生活 | 「〜だね」「大丈夫だよ」 |
+
+子供が質問すると、**博士選定フェーズ（Expert Spotlight）** が始まります。ステージ上のライトが博士たちを順に照らし、「誰がこの質問に詳しいかな？」と探す演出が入ります。回答は**「文章 ＋ 音声 ＋ 挿絵」**がセットになったシーンごとに順次再生され、まるで絵本を読み聞かせてもらっているかのような体験を提供します。
+
+### ② Bridge（架け橋）: AIがその体験を親に「会話のネタ」として翻訳する
+
+子供と博士の会話ログを分析し、「子供が今、光の屈折に興味を持っています」という事実だけでなく、**「お風呂でシャワーを使って虹を作ってみよう、と誘ってみてください」**といった**具体的なアクションプラン**に翻訳して親に届けます。
+
+- **AIからの会話きっかけ提案**: 「今日の会話の切り出し方」や、まだ触れていない分野への誘導を提案
+- **子育てアドバイザー**: 子供と博士たちの過去の会話ログすべてを記憶した、パーソナライズされたチャットボット
+
+### ③ Connection（対話）: 親子が会話を通じて、デジタルの知識をリアルの体験へ広げる
+
+AIからのパスを受け取った親の一言が、子供の知識欲にさらに火をつけます。ただの「画面の中の体験」が、お風呂での実験や、夕方の散歩での発見といった**「リアルの体験」へと拡張**されていく。AIが親子の間に割って入るのではなく、**AIが黒子となって親子の会話をプロデュースし、日常の風景をすべて『科学の実験室』に変えていく**。それが OyaCo Lab で実現したい世界観です。
+
+## 技術スタック
+
+| カテゴリ | 技術 |
+|---|---|
+| フレームワーク | Next.js 16.1（App Router / Server Actions） |
+| UI | React 19.2 / Tailwind CSS 4.x / shadcn/ui（Radix UI）/ Framer Motion |
+| AI（テキスト生成） | Google Cloud Vertex AI — `gemini-2.5-flash` |
+| AI（画像生成） | Google Cloud Vertex AI — `gemini-2.5-flash-image` |
+| AI（音声合成） | Google Cloud Vertex AI TTS — `gemini-2.5-flash-tts`（Chirp 3 HD） |
+| 認証 | Firebase Authentication（Google ログイン） |
+| データベース | Cloud Firestore |
+| ストレージ | Firebase Storage |
+| デプロイ | Cloud Run（Docker マルチステージビルド） |
+| 言語 | TypeScript（strict mode） |
+
+## アーキテクチャ
+
+### 全体構成
+
+Server Actions をバックエンド層として活用し、REST API サーバーを別途構築しない BFF レス構成です。
+
+```
+Browser ── Server Actions ──▶ Next.js Server ── REST API ──▶ Vertex AI / Firebase
+```
+
+### 子供向けチャット: Orchestrator-Workers パターン
+
+```
+質問入力
+  │
+  ▼
+Orchestrator（最適な博士を選定）
+  │
+  ▼
+Expert Agent（起承転結4ステップで回答生成）
+  │
+  ├── Promise.all で並列実行 ──────────────────────┐
+  │   ├ Educator Review（子供向けの分かりやすさチェック）│
+  │   ├ 深掘り質問の自動生成                          │
+  │   ├ 4パネル結合画像の生成                         │
+  │   └ 最初のステップの音声生成                       │
+  │                                                 │
+  ▼                                                 │
+ResultView に表示 ◀──────────────────────────────────┘
+  │
+  ▼
+バックグラウンドで残りステップの音声を先読み生成
+```
+
+エージェント選定と回答生成を2つの Server Action に分離することで、選定完了の瞬間にスポットライト演出を開始し、回答生成の待ち時間をアニメーションで隠蔽しています。
+
+### 保護者向けエージェント: ReAct パターン
+
+Gemini Function Calling を活用し、LLM が親の質問に応じて分析ツールを自律的に選択・実行します。
+
+| ツール | 機能 |
+|---|---|
+| `analyzeConversationHistory` | 指定期間のトピック・博士分布を分析 |
+| `analyzeLearningProgress` | 今週 vs 先週の学習傾向を比較 |
+| `identifyKnowledgeGaps` | 未探索分野を特定し探索を提案 |
+| `suggestEnrichmentActivities` | 興味テーマに基づく多角的な活動提案 |
+
+最大5ステップの ReAct ループで、複数ツールの分析結果を統合した具体的なアドバイスを生成します。
+
+### 好奇心タイプ分類エンジン
+
+子供の質問を10タイプ（博士・発明家・策士・芸術家・物語作家・ユーモア作家・冒険家・リーダー・飼育員・哲学者）に自動分類し、保護者ダッシュボードの統計や会話きっかけ提案のパーソナライズに活用しています。
+
+## セットアップ
 
 ### 前提条件
 
-- Node.js 18.x 以上 (推奨: 20.x LTS)
-- Google Cloud Project with Vertex AI enabled
-- Google Cloud Authentication (Service Account Key or Application Default Credentials)
+- Node.js 20.x LTS
+- Google Cloud プロジェクト（Vertex AI 有効化済み）
 - Firebase プロジェクト（Authentication + Firestore + Storage を有効化）
+- Google Cloud 認証（サービスアカウントキー or Application Default Credentials）
 
-### インストール手順
+### インストール
 
-1. リポジトリをクローンします。
-   ```bash
-   git clone <repository-url>
-   cd kids-science-lab
-   ```
+```bash
+git clone <repository-url>
+cd kids-science-lab
+npm install
+```
 
-2. 依存パッケージをインストールします。
-   ```bash
-   npm install
-   ```
+### 環境変数の設定
 
-3. 環境変数を設定します。
-   `.env.example` をコピーして `.env.local` を作成し、各種設定を行ってください。
-   ```bash
-   cp .env.example .env.local
-   ```
+`.env.example` をコピーして `.env.local` を作成します。
 
-   **`.env.local` の設定例:**
-   ```env
-   # Gemini API Key
-   GEMINI_API_KEY=your_api_key_here
+```bash
+cp .env.example .env.local
+```
 
-   # Vertex AI Project & Location（任意）
-   VERTEX_AI_PROJECT=your-project-id
-   VERTEX_AI_LOCATION=asia-northeast1
+`.env.local` に以下を設定してください:
 
-   # Google Cloud Authentication
-   GOOGLE_APPLICATION_CREDENTIALS=/path/to/your-service-account-key.json
+```env
+# Firebase（クライアント側）
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_FIRESTORE_DB_NAME=
 
-   # Firebase（クライアント側）
-   NEXT_PUBLIC_FIREBASE_API_KEY=your-firebase-api-key
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-   NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+# Firebase（サーバー側 / Admin SDK）
+FIREBASE_PROJECT_ID=
+FIRESTORE_DB_NAME=
 
-   # Feature Flags（任意）
-   USE_PARALLEL_GENERATION=true
-   ```
+# Cloud Run 用 Firebase クライアント設定
+FIREBASE_CLIENT_API_KEY=
+FIREBASE_CLIENT_AUTH_DOMAIN=
+FIREBASE_CLIENT_STORAGE_BUCKET=
+FIREBASE_CLIENT_MESSAGING_SENDER_ID=
+FIREBASE_CLIENT_APP_ID=
+
+# 開発用デフォルト子供ID
+NEXT_PUBLIC_DEFAULT_CHILD_ID=child1
+```
 
 ### 開発サーバーの起動
 
 ```bash
 npm run dev
 ```
-ブラウザで `http://localhost:3000` にアクセスしてください。
 
-## 📂 プロジェクト構造
+ブラウザで http://localhost:3000 にアクセスしてください。
 
-```text
-src/
-├── app/                        # Next.js App Router Pages
-│   ├── page.tsx                # チャット画面（メイン）
-│   ├── actions.ts              # Server Actions（AI ロジック）
-│   ├── layout.tsx              # ルートレイアウト
-│   ├── globals.css             # グローバルスタイル
-│   ├── firebase-config-script.tsx # Firebase 設定スクリプト
-│   ├── actions/                # 追加 Server Actions
-│   │   └── conversation-logger.ts # 会話ログ Server Action
-│   ├── login/                  # ログインページ
-│   ├── select-child/           # 子供選択ページ
-│   ├── add-child/              # 子供追加ページ
-│   ├── report/                 # レポートページ（レガシー）
-│   └── parent/                 # 保護者ダッシュボード
-│       ├── page.tsx            # ダッシュボードトップ（PC: 2カラム / スマホ: FAB付き）
-│       ├── layout.tsx          # 保護者レイアウト（認証ガード）
-│       ├── actions.ts          # 保護者向け Server Actions（会話提案・親エージェント）
-│       └── conversations/      # 会話履歴一覧・詳細
-├── components/                 # UI Components
-│   ├── AgentChatInterface/     # メインチャット UI
-│   │   ├── index.tsx           # エントリーポイント
-│   │   └── ViewRenderer.tsx    # ビュー切り替えレンダラー
-│   ├── InputView.tsx           # 質問入力画面
-│   ├── ExpertSpotlight.tsx     # 博士選定演出
-│   ├── ImageGeneratingView.tsx # 画像生成中画面
-│   ├── ResultView.tsx          # 回答表示画面
-│   ├── MicButton.tsx           # 音声入力ボタン
-│   ├── ExplanationGrid.tsx     # 解説グリッド表示
-│   ├── StreamingText.tsx       # ストリーミングテキスト表示
-│   ├── ParentReport.tsx        # レポート UI（レガシー）
-│   ├── parent/                 # 保護者ダッシュボード用コンポーネント
-│   │   ├── ParentAgentChat.tsx # 子育てアドバイザーチャット UI
-│   │   ├── AISuggestionCard.tsx# AI 会話きっかけ提案
-│   │   ├── StatsCards.tsx      # 統計カード
-│   │   ├── ChildSelector.tsx   # 子供切り替え
-│   │   ├── RecentConversations.tsx # 最近の会話一覧
-│   │   ├── ConversationCard.tsx    # 会話カード
-│   │   ├── SceneViewer.tsx     # シーン表示
-│   │   └── FeedbackControls.tsx# フィードバック操作
-│   └── ui/                     # shadcn/ui コンポーネント
-├── contexts/                   # React Context
-│   └── AuthContext.tsx         # 認証・子供管理コンテキスト
-├── data/                       # 静的データ
-│   ├── funFacts.ts             # 豆知識データ
-│   └── miniQuizzes.ts          # ミニクイズデータ
-├── hooks/                      # Custom React Hooks
-│   ├── useAgentChat.ts         # チャットフロー管理
-│   ├── useTextToSpeech.ts      # 音声合成（TTS）
-│   ├── useSpeechRecognition.ts # 音声入力
-│   ├── useBackgroundImageGenerator.ts  # バックグラウンド画像生成
-│   ├── useBackgroundAudioGenerator.ts  # バックグラウンド音声生成
-│   ├── useBackgroundPairGenerator.ts   # バックグラウンドペア生成
-│   ├── useConversationLogger.ts        # 会話ログ記録
-│   └── useParentDashboard.ts           # 保護者ダッシュボード
-└── lib/                        # Business Logic & Utilities
-    ├── agents/                 # エージェントシステム
-    │   ├── core.ts             # オーケストレーター・回答生成・Educatorレビュー・深掘り質問
-    │   ├── definitions.ts      # 7人のエージェント定義（ペルソナ・専門分野）
-    │   ├── types.ts            # 型定義
-    │   └── parent-agent/       # 親エージェント（子育てアドバイザー）
-    │       ├── core.ts         # ReAct ループ（Gemini Function Calling）
-    │       ├── tools.ts        # 分析ツール群（会話履歴・学習進捗・知識ギャップ）
-    │       ├── types.ts        # 型定義
-    │       └── index.ts        # エントリーポイント
-    ├── firebase/               # Firebase 統合
-    │   ├── config.ts           # Firebase 初期化（クライアント）
-    │   ├── admin.ts            # Firebase Admin SDK 初期化（サーバー）
-    │   ├── auth.ts             # 認証ヘルパー
-    │   ├── firestore.ts        # Firestore CRUD（クライアント）
-    │   ├── firestore-server.ts # Firestore データ取得（サーバー / Admin SDK）
-    │   ├── storage.ts          # Firebase Storage（画像アップロード）
-    │   ├── types.ts            # Firestore データ型
-    │   └── runtime-config.ts   # ランタイム設定
-    ├── artists.ts              # アーティスト定義（レガシー）
-    ├── chat-history.ts         # チャット履歴管理（LocalStorage）
-    ├── conversation-logger.ts  # 会話ログ（Firestore 連携・クライアント）
-    ├── conversation-logger-server.ts # 会話ログ（サーバーサイド）
-    ├── curiosity-types.ts      # 好奇心タイプ分類
-    ├── utils.ts                # ユーティリティ関数
-    └── vertexai.ts             # Vertex AI API クライアント
+### 本番ビルド
 
-docs/                           # ドキュメント（プロジェクトルート）
-├── architecture.md             # アーキテクチャ設計
-├── architecture-diagram.md     # アーキテクチャ図
-├── sequence-diagrams.md        # シーケンス図
-├── user-stories.md             # ユーザーストーリー
-├── spec.md                     # 仕様書
-├── assets/                     # スクリーンショット・画像
-├── doing/                      # 進行中の設計ドキュメント
-├── done/                       # 完了した設計ドキュメント
-├── todo/                       # 未着手の計画
-└── tips/                       # トラブルシューティング・Tips
+```bash
+npm run build
+npm start
 ```
 
-## 🏗️ アーキテクチャ
+### Docker でのデプロイ
 
-### 子供向けチャット（Orchestrator-Workers パターン）
-
-子供の質問に対して、以下のパイプラインで処理を行います。
-
-```
-質問入力 → Orchestrator(エージェント選定) → スポットライト演出
-                                                    ↓
-                                          Expert Agent(回答生成)
-                                                    ↓
-                                    ┌───────────────┼───────────────┐
-                                    ↓               ↓               ↓
-                             Educator Review   Follow-Up生成   画像+音声生成
-                                    ↓               ↓               ↓
-                                    └───────────────┼───────────────┘
-                                                    ↓
-                                          結果表示(ResultView)
-                                                    ↓
-                                        バックグラウンド生成(残りペア)
+```bash
+docker build -t oyaco-lab .
+docker run -p 3000:3000 oyaco-lab
 ```
 
-1. **Orchestrator**: ユーザーの質問を解析し、7人の専門家から最適なエージェントを選定します。
-2. **Expert Agent**: 選定された博士が、自身のペルソナと口調で回答を起承転結の4ステップで生成します。
-3. **Educator Review**: スマイル先生が回答を「子供にとって分かりやすいか」チェックし、必要に応じて修正します（回答した博士が educator 自身の場合はスキップ）。
-4. **Follow-Up Generation**: 回答内容から深掘り質問候補を自動生成します（ステップ 3 と並列実行）。
-5. **Multimedia Generation**: 4パネル結合画像と最初のステップの音声を並列生成します。残りのステップの画像・音声はバックグラウンドで逐次生成されます。
+## ライセンス
 
-### 保護者向けエージェント（ReAct パターン）
-
-保護者ダッシュボードでは、子育てアドバイザーエージェントが自律的に動作します。
-
-1. **親からの質問受付**: 自由入力またはプリセット質問（「学習の様子」「新しい興味」「会話のヒント」等）
-2. **ReAct ループ**: Gemini の Function Calling により、エージェントが必要なツールを自分で選択・実行します。
-   - `analyzeConversationHistory` — 会話履歴のトピック・博士分布を分析
-   - `analyzeLearningProgress` — 今週と先週の学習傾向を比較
-   - `identifyKnowledgeGaps` — 未探索の分野を特定し探索を提案
-3. **最終回答生成**: 複数ツールの分析結果を統合し、具体的で実践的なアドバイスを生成します。
-
-### 認証フロー
-
-1. `/login` — Google アカウントでログイン
-2. `/select-child` — 子供プロフィールを選択（または `/add-child` で新規作成）
-3. `/` — チャット画面（メイン）
-
-詳細なアーキテクチャについては [docs/architecture.md](docs/architecture.md) を参照してください。
-シーケンス図は [docs/sequence-diagrams.md](docs/sequence-diagrams.md) を参照してください。
+このプロジェクトはプライベートリポジトリです。
